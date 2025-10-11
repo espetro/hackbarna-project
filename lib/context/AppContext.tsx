@@ -2,10 +2,10 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Recommendation, ItineraryEvent } from '../types';
-// Import Firebase functions for suggested activities
+// Import Firebase functions 
 import { getSuggestedActivities } from '../firebase/db';
 
-// Firebase disabled for user data - using localStorage as fallback
+// Firebase enabled for suggested activities, localStorage fallback for user data
 const saveFavorites = async (attractions: any[], userId?: string) => {
   if (typeof window !== 'undefined') {
     try {

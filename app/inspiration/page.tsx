@@ -8,6 +8,8 @@ import { mockRecommendations } from '@/lib/mockData';
 import Logo from '@/components/Logo';
 import { BackgroundLines } from '@/components/BackgroundLines';
 import { motion } from 'framer-motion';
+// Import Firebase test for debugging (remove in production)
+import '@/lib/testFirebase';
 
 // Inspiration images - using Unsplash for demo purposes
 const inspirationImages = [
