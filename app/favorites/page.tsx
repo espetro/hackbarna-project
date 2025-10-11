@@ -80,18 +80,10 @@ export default function FavoritesPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4"
+              className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white"
             >
               Select Your Favorites
             </motion.h1>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="text-lg text-gray-600 dark:text-gray-400"
-            >
-              Choose the activities that interest you most
-            </motion.p>
           </div>
 
           {/* Favorites Selection Component - Scrollable content */}

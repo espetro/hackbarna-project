@@ -2,6 +2,16 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Recommendation, ItineraryEvent } from '../types';
+import {
+  saveFavorites,
+  getFavorites,
+  getItineraryEvents,
+  addItineraryEvent as addItineraryEventToDb,
+  removeItineraryEvent as removeItineraryEventFromDb,
+  importItineraryEvents,
+  clearItinerary as clearItineraryInDb,
+} from '../firebase/db';
+import { useAuth } from './AuthContext';
 
 export interface Attraction {
   id: number;
@@ -31,9 +41,8 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const DEFAULT_USER_ID = 'default-user';
-
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [recommendations, setRecommendationsState] = useState<Recommendation[]>([]);
   const [selectedRecommendation, setSelectedRecommendationState] = useState<Recommendation | null>(null);
   const [userQuery, setUserQueryState] = useState<string>('');
@@ -41,36 +50,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [itineraryEvents, setItineraryEvents] = useState<ItineraryEvent[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load data from database on mount
+  // Load data from Firebase when user changes
   useEffect(() => {
     async function loadData() {
-      try {
-        console.log('📦 Loading data from database...');
+      if (!user) {
+        // Clear data when user logs out
+        setFavoriteAttractionsState([]);
+        setItineraryEvents([]);
+        setIsLoaded(false);
+        return;
+      }
 
-        // Load favorites
-        const favoritesRes = await fetch('/api/favorites');
-        if (favoritesRes.ok) {
-          const data = await favoritesRes.json();
-          if (data.favorites && data.favorites.length > 0) {
-            setFavoriteAttractionsState(data.favorites);
-            console.log('⭐ Loaded', data.favorites.length, 'favorites from database');
-          }
+      try {
+        console.log('📦 Loading data from Firebase for user:', user.uid);
+
+        // Load favorites for this user
+        const favorites = await getFavorites(user.uid);
+        if (favorites && favorites.length > 0) {
+          setFavoriteAttractionsState(favorites);
+          console.log('⭐ Loaded', favorites.length, 'favorites from Firebase');
         }
 
-        // Load itinerary
-        const itineraryRes = await fetch('/api/itinerary');
-        if (itineraryRes.ok) {
-          const data = await itineraryRes.json();
-          if (data.events && data.events.length > 0) {
-            // Convert date strings back to Date objects
-            const events = data.events.map((e: any) => ({
-              ...e,
-              startTime: new Date(e.startTime),
-              endTime: new Date(e.endTime),
-            }));
-            setItineraryEvents(events);
-            console.log('📅 Loaded', events.length, 'events from database');
-          }
+        // Load itinerary for this user
+        const events = await getItineraryEvents(user.uid);
+        if (events && events.length > 0) {
+          setItineraryEvents(events);
+          console.log('📅 Loaded', events.length, 'events from Firebase');
         }
 
         setIsLoaded(true);
@@ -82,7 +87,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     loadData();
-  }, []);
+  }, [user]);
 
   // Wrapped setters with logging
   const setRecommendations = useCallback((recs: Recommendation[]) => {
@@ -104,15 +109,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     console.log('⭐ Favorite attractions updated:', attractions.length, 'items');
     setFavoriteAttractionsState(attractions);
 
-    // Persist to database
-    if (isLoaded) {
-      fetch('/api/favorites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ favorites: attractions }),
-      }).catch(err => console.error('Failed to save favorites:', err));
+    // Persist to Firebase
+    if (isLoaded && user) {
+      saveFavorites(attractions, user.uid).catch(err => console.error('Failed to save favorites:', err));
     }
-  }, [isLoaded]);
+  }, [isLoaded, user]);
 
   // Add a single event to itinerary
   const addItineraryEvent = useCallback((event: ItineraryEvent) => {
@@ -130,18 +131,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const sorted = updated.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
       console.log('✅ Itinerary updated. Total events:', sorted.length);
 
-      // Persist to database
-      if (isLoaded) {
-        fetch('/api/itinerary/add', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ event }),
-        }).catch(err => console.error('Failed to save event:', err));
+      // Persist to Firebase
+      if (isLoaded && user) {
+        addItineraryEventToDb(event, user.uid).catch(err => console.error('Failed to save event:', err));
       }
 
       return sorted;
     });
-  }, [isLoaded]);
+  }, [isLoaded, user]);
 
   // Remove event from itinerary
   const removeItineraryEvent = useCallback((eventId: string) => {
@@ -150,24 +147,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const filtered = prev.filter(e => e.id !== eventId);
       console.log('✅ Event removed. Total events:', filtered.length);
 
-      // Persist to database
-      if (isLoaded) {
-        fetch('/api/itinerary/remove', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ eventId }),
-        }).catch(err => console.error('Failed to remove event:', err));
+      // Persist to Firebase
+      if (isLoaded && user) {
+        removeItineraryEventFromDb(eventId, user.uid).catch(err => console.error('Failed to remove event:', err));
       }
 
       return filtered;
     });
-  }, [isLoaded]);
+  }, [isLoaded, user]);
 
   // Clear all itinerary events
   const clearItinerary = useCallback(() => {
     console.log('🧹 Clearing all itinerary events');
     setItineraryEvents([]);
-  }, []);
+
+    // Persist to Firebase
+    if (user) {
+      clearItineraryInDb(user.uid).catch(err => console.error('Failed to clear itinerary:', err));
+    }
+  }, [user]);
 
   // Import multiple events from Google Calendar
   const importGoogleCalendarEvents = useCallback((events: ItineraryEvent[]) => {
@@ -182,18 +180,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const sorted = merged.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
       console.log('✅ Calendar import complete. New events:', newEvents.length, '| Total:', sorted.length);
 
-      // Persist to database
-      if (isLoaded && newEvents.length > 0) {
-        fetch('/api/itinerary/import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ events: newEvents }),
-        }).catch(err => console.error('Failed to import events:', err));
+      // Persist to Firebase
+      if (isLoaded && newEvents.length > 0 && user) {
+        importItineraryEvents(newEvents, user.uid).catch(err => console.error('Failed to import events:', err));
       }
 
       return sorted;
     });
-  }, [isLoaded]);
+  }, [isLoaded, user]);
 
   // Track which recommendation IDs are currently in the itinerary (soft delete)
   const recommendationsInItinerary = React.useMemo(() => {
