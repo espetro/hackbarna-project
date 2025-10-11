@@ -37,6 +37,11 @@ export default function ItineraryPanel({
   const [expandedEventIds, setExpandedEventIds] = React.useState<Set<string>>(new Set());
   const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
   const [carouselIndices, setCarouselIndices] = React.useState<Record<string, number>>({});
+  
+  // Check if calendar has been synced (has events from google_calendar source)
+  const hasCalendarEvents = React.useMemo(() => {
+    return events.some(event => event.source === 'google_calendar');
+  }, [events]);
 
   const handleDragEnd = (event: any, info: PanInfo) => {
     // Close if dragged down more than 150px
@@ -235,15 +240,43 @@ export default function ItineraryPanel({
                       {formatDate(selectedDate)}
                     </p>
                   </div>
-                  <button
-                    onClick={onClose}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                    aria-label="Close itinerary"
-                  >
-                    <svg className="w-6 h-6 text-gray-800 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {/* Google Calendar Sync Button - Only show when itinerary has events */}
+                    {events.length > 0 && (
+                      <button
+                        onClick={hasCalendarEvents ? undefined : onImportCalendar}
+                        disabled={hasCalendarEvents}
+                        className={`p-2 rounded-full transition-all flex items-center gap-2 ${
+                          hasCalendarEvents
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 cursor-not-allowed'
+                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/40'
+                        }`}
+                        aria-label={hasCalendarEvents ? 'Calendar synced' : 'Sync with Google Calendar'}
+                        title={hasCalendarEvents ? 'Calendar synced' : 'Import from Google Calendar'}
+                      >
+                        {hasCalendarEvents ? (
+                          // Synced state - checkmark
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          // Not synced state - calendar icon
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/>
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                    <button
+                      onClick={onClose}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                      aria-label="Close itinerary"
+                    >
+                      <svg className="w-6 h-6 text-gray-800 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Date Navigator */}

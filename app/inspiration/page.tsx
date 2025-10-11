@@ -82,8 +82,9 @@ export default function InspirationPage() {
       // Check if API endpoint is configured
       const apiEndpoint = process.env.NEXT_PUBLIC_RECOMMENDATIONS_API;
 
-      if (apiEndpoint) {
+      if (apiEndpoint && apiEndpoint.trim() !== '') {
         // Make API call if endpoint is configured
+        console.log('Using API endpoint:', apiEndpoint);
         const response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: {
@@ -98,6 +99,9 @@ export default function InspirationPage() {
 
         const data = await response.json();
         setRecommendations(data);
+
+        // Navigate to recommendations page
+        router.push('/recommendations');
       } else {
         // Use mock data if no API endpoint is configured
         console.log('No API endpoint configured, using mock data');
@@ -106,10 +110,10 @@ export default function InspirationPage() {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         setRecommendations(mockRecommendations);
-      }
 
-      // Navigate to recommendations page
-      router.push('/recommendations');
+        // Navigate to recommendations page
+        router.push('/recommendations');
+      }
     } catch (err) {
       console.error('Error fetching recommendations:', err);
 
