@@ -16,7 +16,8 @@ import { generateMockItineraryEvents } from '@/lib/mockItineraryData';
 export default function RecommendationsPage() {
   const router = useRouter();
   const { 
-    recommendations, 
+    recommendations,
+    availableRecommendations, // Filtered recommendations (excluding those in itinerary)
     setSelectedRecommendation,
     itineraryEvents,
     addItineraryEvent,
@@ -30,12 +31,12 @@ export default function RecommendationsPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  // Redirect to inspiration page if no recommendations
+  // Redirect to inspiration page if no available recommendations
   useEffect(() => {
-    if (recommendations.length === 0) {
+    if (availableRecommendations.length === 0 && recommendations.length === 0) {
       router.push('/inspiration');
     }
-  }, [recommendations, router]);
+  }, [availableRecommendations, recommendations, router]);
 
   // Booking functionality removed - commented out
   // const handleBook = (rec: Recommendation) => {
@@ -86,9 +87,16 @@ export default function RecommendationsPage() {
     setTimeout(() => setShowToast(false), 3000);
 
     // Auto-swipe to next card after 1 second
+    // Use availableRecommendations since the current one will be filtered out
     setTimeout(() => {
-      const nextIndex = (currentIndex + 1) % recommendations.length;
-      setCurrentIndex(nextIndex);
+      if (availableRecommendations.length > 1) {
+        // If there are still cards left, stay at current index or wrap
+        const nextIndex = currentIndex >= availableRecommendations.length - 1 ? 0 : currentIndex;
+        setCurrentIndex(nextIndex);
+      } else if (availableRecommendations.length === 1) {
+        // This was the last card - redirect to inspiration
+        router.push('/inspiration');
+      }
     }, 1000);
   };
 
@@ -156,11 +164,46 @@ export default function RecommendationsPage() {
     setIsItineraryOpen(true);
   };
 
-  if (recommendations.length === 0) {
-    return null; // Will redirect
+  // Show loading or redirect if no available recommendations
+  if (availableRecommendations.length === 0) {
+    // If we still have original recommendations, show a message
+    if (recommendations.length > 0) {
+      return (
+        <div className="h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              All Activities Added!
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
+              You've added all suggested activities to your itinerary. Great job planning your trip!
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => setIsItineraryOpen(true)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-full font-semibold transition-all shadow-lg hover:shadow-xl"
+              >
+                View My Itinerary
+              </button>
+              <button
+                onClick={() => router.push('/inspiration')}
+                className="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white py-4 rounded-full font-semibold transition-all"
+              >
+                Find More Activities
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null; // Will redirect via useEffect
   }
 
-  const currentRecommendation = recommendations[currentIndex];
+  const currentRecommendation = availableRecommendations[currentIndex];
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
@@ -170,10 +213,14 @@ export default function RecommendationsPage() {
           recommendations={recommendations}
           selectedId={currentRecommendation?.id || null}
           onMarkerClick={(id) => {
-            const index = recommendations.findIndex(r => r.id === id);
+            // Find in available recommendations only (soft delete)
+            const index = availableRecommendations.findIndex(r => r.id === id);
             if (index !== -1) {
               setCurrentIndex(index);
-              setExpandedCard(recommendations[index]);
+              setExpandedCard(availableRecommendations[index]);
+            } else {
+              // This recommendation is in itinerary, show a message
+              console.log('This activity is already in your itinerary');
             }
           }}
           itineraryEvents={itineraryEvents}
@@ -183,9 +230,9 @@ export default function RecommendationsPage() {
         <div className="absolute inset-0 bg-black/20 dark:bg-black/40 pointer-events-none" />
       </div>
 
-      {/* Swipeable Card Stack */}
+      {/* Swipeable Card Stack - Only show available recommendations */}
       <SwipeableCardStack
-        recommendations={recommendations}
+        recommendations={availableRecommendations}
         currentIndex={currentIndex}
         onIndexChange={setCurrentIndex}
         onCardClick={(rec) => setExpandedCard(rec)}
@@ -210,7 +257,7 @@ export default function RecommendationsPage() {
           console.log('Event clicked:', event);
         }}
         onImportCalendar={handleImportCalendar}
-        recommendations={recommendations}
+        recommendations={availableRecommendations}
         onAddRecommendation={handleAddToItinerary}
       />
 

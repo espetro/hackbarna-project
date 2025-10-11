@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Recommendation, ItineraryEvent } from '../types';
 
 export interface Attraction {
@@ -24,9 +24,14 @@ interface AppContextType {
   removeItineraryEvent: (eventId: string) => void;
   clearItinerary: () => void;
   importGoogleCalendarEvents: (events: ItineraryEvent[]) => void;
+  // Soft delete - track which recommendations are in itinerary
+  recommendationsInItinerary: Set<number>;
+  availableRecommendations: Recommendation[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+const DEFAULT_USER_ID = 'default-user';
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [recommendations, setRecommendationsState] = useState<Recommendation[]>([]);
@@ -34,6 +39,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [userQuery, setUserQueryState] = useState<string>('');
   const [favoriteAttractions, setFavoriteAttractionsState] = useState<Attraction[]>([]);
   const [itineraryEvents, setItineraryEvents] = useState<ItineraryEvent[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load data from database on mount
+  useEffect(() => {
+    async function loadData() {
+      try {
+        console.log('📦 Loading data from database...');
+
+        // Load favorites
+        const favoritesRes = await fetch('/api/favorites');
+        if (favoritesRes.ok) {
+          const data = await favoritesRes.json();
+          if (data.favorites && data.favorites.length > 0) {
+            setFavoriteAttractionsState(data.favorites);
+            console.log('⭐ Loaded', data.favorites.length, 'favorites from database');
+          }
+        }
+
+        // Load itinerary
+        const itineraryRes = await fetch('/api/itinerary');
+        if (itineraryRes.ok) {
+          const data = await itineraryRes.json();
+          if (data.events && data.events.length > 0) {
+            // Convert date strings back to Date objects
+            const events = data.events.map((e: any) => ({
+              ...e,
+              startTime: new Date(e.startTime),
+              endTime: new Date(e.endTime),
+            }));
+            setItineraryEvents(events);
+            console.log('📅 Loaded', events.length, 'events from database');
+          }
+        }
+
+        setIsLoaded(true);
+        console.log('✅ Data loaded successfully');
+      } catch (error) {
+        console.error('❌ Error loading data:', error);
+        setIsLoaded(true); // Continue even if load fails
+      }
+    }
+
+    loadData();
+  }, []);
 
   // Wrapped setters with logging
   const setRecommendations = useCallback((recs: Recommendation[]) => {
@@ -54,7 +103,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setFavoriteAttractions = useCallback((attractions: Attraction[]) => {
     console.log('⭐ Favorite attractions updated:', attractions.length, 'items');
     setFavoriteAttractionsState(attractions);
-  }, []);
+
+    // Persist to database
+    if (isLoaded) {
+      fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ favorites: attractions }),
+      }).catch(err => console.error('Failed to save favorites:', err));
+    }
+  }, [isLoaded]);
 
   // Add a single event to itinerary
   const addItineraryEvent = useCallback((event: ItineraryEvent) => {
@@ -66,14 +124,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.log('⚠️ Event already exists in itinerary');
         return prev;
       }
-      
+
       // Add and sort by startTime
       const updated = [...prev, event];
       const sorted = updated.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
       console.log('✅ Itinerary updated. Total events:', sorted.length);
+
+      // Persist to database
+      if (isLoaded) {
+        fetch('/api/itinerary/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event }),
+        }).catch(err => console.error('Failed to save event:', err));
+      }
+
       return sorted;
     });
-  }, []);
+  }, [isLoaded]);
 
   // Remove event from itinerary
   const removeItineraryEvent = useCallback((eventId: string) => {
@@ -81,9 +149,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setItineraryEvents((prev) => {
       const filtered = prev.filter(e => e.id !== eventId);
       console.log('✅ Event removed. Total events:', filtered.length);
+
+      // Persist to database
+      if (isLoaded) {
+        fetch('/api/itinerary/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId }),
+        }).catch(err => console.error('Failed to remove event:', err));
+      }
+
       return filtered;
     });
-  }, []);
+  }, [isLoaded]);
 
   // Clear all itinerary events
   const clearItinerary = useCallback(() => {
@@ -99,13 +177,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const existingIds = new Set(prev.map(e => e.id));
       const newEvents = events.filter(e => !existingIds.has(e.id));
       const merged = [...prev, ...newEvents];
-      
+
       // Sort by startTime
       const sorted = merged.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
       console.log('✅ Calendar import complete. New events:', newEvents.length, '| Total:', sorted.length);
+
+      // Persist to database
+      if (isLoaded && newEvents.length > 0) {
+        fetch('/api/itinerary/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ events: newEvents }),
+        }).catch(err => console.error('Failed to import events:', err));
+      }
+
       return sorted;
     });
-  }, []);
+  }, [isLoaded]);
+
+  // Track which recommendation IDs are currently in the itinerary (soft delete)
+  const recommendationsInItinerary = React.useMemo(() => {
+    const recIds = new Set<number>();
+    itineraryEvents.forEach(event => {
+      if (event.recommendationId !== undefined) {
+        recIds.add(event.recommendationId);
+      }
+    });
+    console.log('🔍 Recommendations in itinerary:', Array.from(recIds));
+    return recIds;
+  }, [itineraryEvents]);
+
+  // Filter out recommendations that are already in the itinerary
+  const availableRecommendations = React.useMemo(() => {
+    const filtered = recommendations.filter(rec => !recommendationsInItinerary.has(rec.id));
+    console.log('🎯 Available recommendations:', filtered.length, '/', recommendations.length);
+    return filtered;
+  }, [recommendations, recommendationsInItinerary]);
 
   return (
     <AppContext.Provider
@@ -123,6 +230,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         removeItineraryEvent,
         clearItinerary,
         importGoogleCalendarEvents,
+        recommendationsInItinerary,
+        availableRecommendations,
       }}
     >
       {children}
