@@ -285,9 +285,7 @@ export default function VideoCarousel({
               preload="metadata"
               className="w-full h-full object-cover"
               aria-hidden={!isActive}
-            >
-              <source src={item.src} type="video/mp4" />
-            </video>
+            />
 
             {/* Overlay gradient and caption - only if showCaptions is true */}
             {showCaptions && (

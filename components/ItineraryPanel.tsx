@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { ItineraryEvent } from '@/lib/types';
+import { ItineraryEvent, Recommendation } from '@/lib/types';
 import Image from 'next/image';
 import {
   calculateDistance,
@@ -20,6 +20,8 @@ interface ItineraryPanelProps {
   onRemoveEvent: (eventId: string) => void;
   onEventClick: (event: ItineraryEvent) => void;
   onImportCalendar: () => void;
+  recommendations?: Recommendation[];
+  onAddRecommendation?: (rec: Recommendation) => void;
 }
 
 export default function ItineraryPanel({
@@ -29,8 +31,12 @@ export default function ItineraryPanel({
   onRemoveEvent,
   onEventClick,
   onImportCalendar,
+  recommendations = [],
+  onAddRecommendation,
 }: ItineraryPanelProps) {
   const [expandedEventIds, setExpandedEventIds] = React.useState<Set<string>>(new Set());
+  const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
+  const [carouselIndices, setCarouselIndices] = React.useState<Record<string, number>>({});
 
   const handleDragEnd = (event: any, info: PanInfo) => {
     // Close if dragged down more than 150px
@@ -100,15 +106,94 @@ export default function ItineraryPanel({
     }
   };
 
-  // Group events by date
-  const groupedEvents = events.reduce((groups, event) => {
-    const dateKey = formatDate(event.startTime);
-    if (!groups[dateKey]) {
-      groups[dateKey] = [];
+  // Filter events for selected date (one-day view)
+  const dayEvents = events.filter(event => {
+    const eventDate = new Date(event.startTime);
+    return (
+      eventDate.getFullYear() === selectedDate.getFullYear() &&
+      eventDate.getMonth() === selectedDate.getMonth() &&
+      eventDate.getDate() === selectedDate.getDate()
+    );
+  }).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+  // Get unique dates from all events
+  const uniqueDates = Array.from(
+    new Set(
+      events.map(event =>
+        new Date(event.startTime.getFullYear(), event.startTime.getMonth(), event.startTime.getDate()).getTime()
+      )
+    )
+  )
+    .map(timestamp => new Date(timestamp))
+    .sort((a, b) => a.getTime() - b.getTime());
+
+  // Generate agenda time slots (8 AM to 10 PM)
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 8; hour <= 22; hour++) {
+      slots.push(hour);
     }
-    groups[dateKey].push(event);
-    return groups;
-  }, {} as Record<string, ItineraryEvent[]>);
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
+
+  // Detect gaps where we can add activities (30+ minutes during daytime 8am-10pm)
+  const detectGaps = () => {
+    if (dayEvents.length === 0) return [];
+
+    const gaps: Array<{ startHour: number; endHour: number; startMinute: number; endMinute: number; durationMinutes: number }> = [];
+    const dayStart = new Date(selectedDate);
+    dayStart.setHours(8, 0, 0, 0);
+    const dayEnd = new Date(selectedDate);
+    dayEnd.setHours(22, 0, 0, 0);
+
+    // Check gap before first event
+    if (dayEvents[0].startTime.getTime() - dayStart.getTime() > 30 * 60 * 1000) {
+      const durationMinutes = (dayEvents[0].startTime.getTime() - dayStart.getTime()) / (60 * 1000);
+      gaps.push({
+        startHour: dayStart.getHours(),
+        startMinute: dayStart.getMinutes(),
+        endHour: dayEvents[0].startTime.getHours(),
+        endMinute: dayEvents[0].startTime.getMinutes(),
+        durationMinutes,
+      });
+    }
+
+    // Check gaps between events
+    for (let i = 0; i < dayEvents.length - 1; i++) {
+      const currentEnd = dayEvents[i].endTime;
+      const nextStart = dayEvents[i + 1].startTime;
+      const gapMinutes = (nextStart.getTime() - currentEnd.getTime()) / (60 * 1000);
+
+      if (gapMinutes > 30) {
+        gaps.push({
+          startHour: currentEnd.getHours(),
+          startMinute: currentEnd.getMinutes(),
+          endHour: nextStart.getHours(),
+          endMinute: nextStart.getMinutes(),
+          durationMinutes: gapMinutes,
+        });
+      }
+    }
+
+    // Check gap after last event
+    const lastEvent = dayEvents[dayEvents.length - 1];
+    if (dayEnd.getTime() - lastEvent.endTime.getTime() > 30 * 60 * 1000) {
+      const durationMinutes = (dayEnd.getTime() - lastEvent.endTime.getTime()) / (60 * 1000);
+      gaps.push({
+        startHour: lastEvent.endTime.getHours(),
+        startMinute: lastEvent.endTime.getMinutes(),
+        endHour: dayEnd.getHours(),
+        endMinute: dayEnd.getMinutes(),
+        durationMinutes,
+      });
+    }
+
+    return gaps;
+  };
+
+  const gaps = detectGaps();
 
   return (
     <AnimatePresence>
@@ -143,11 +228,11 @@ export default function ItineraryPanel({
 
               {/* Header */}
               <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">My Itinerary</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">My Agenda</h2>
                     <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-                      {events.length} {events.length === 1 ? 'event' : 'events'} scheduled
+                      {formatDate(selectedDate)}
                     </p>
                   </div>
                   <button
@@ -160,9 +245,35 @@ export default function ItineraryPanel({
                     </svg>
                   </button>
                 </div>
+
+                {/* Date Navigator */}
+                {uniqueDates.length > 0 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                    {uniqueDates.map((date) => {
+                      const isSelected =
+                        date.getFullYear() === selectedDate.getFullYear() &&
+                        date.getMonth() === selectedDate.getMonth() &&
+                        date.getDate() === selectedDate.getDate();
+
+                      return (
+                        <button
+                          key={date.getTime()}
+                          onClick={() => setSelectedDate(date)}
+                          className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                            isSelected
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-            {/* Events List */}
+            {/* Agenda Timeline */}
             <div className="flex-1 overflow-y-auto">
               {events.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full px-6 text-center">
@@ -175,10 +286,9 @@ export default function ItineraryPanel({
                     No events yet
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 max-w-sm">
-                    Import from Google Calendar or add recommendations to start building your itinerary
+                    Import from Google Calendar or add recommendations to start building your agenda
                   </p>
 
-                  {/* Import Google Calendar Button - Centered */}
                   <button
                     onClick={onImportCalendar}
                     className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
@@ -189,47 +299,105 @@ export default function ItineraryPanel({
                     <span>Import Google Calendar</span>
                   </button>
                 </div>
+              ) : dayEvents.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    No events on this day
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Select another date or add activities to this day
+                  </p>
+                </div>
               ) : (
-                <div className="px-6 py-4 space-y-6">
-                  {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
-                    <div key={dateKey}>
-                      {/* Date Header */}
-                      <div className="sticky top-0 bg-white dark:bg-gray-800 py-2 mb-4 z-10">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                          {dateKey}
-                        </h3>
-                      </div>
+                <div className="px-4 py-4">
+                  {/* Agenda Timeline - Simple List */}
+                  <div className="space-y-2">
+                    {dayEvents.map((event, index) => {
+                      const isRecommendation = event.source === 'recommendation';
+                      const isExpanded = expandedEventIds.has(event.id);
 
-                      {/* Timeline Events */}
-                      <div className="space-y-4">
-                        {dateEvents.map((event, index) => {
-                          const nextEvent = dateEvents[index + 1];
-                          const distance = nextEvent
-                            ? calculateDistance(
-                                event.location.lat,
-                                event.location.lng,
-                                nextEvent.location.lat,
-                                nextEvent.location.lng
-                              )
-                            : 0;
-                          const travelTime = nextEvent ? calculateTravelTime(distance) : 0;
-                          const travelMode = nextEvent ? getTravelMode(distance) : 'walking';
-                          const gapTime = nextEvent ? calculateGapBetweenEvents(event, nextEvent) : 0;
+                      // Check if there's a gap before this event
+                      const gapBefore = gaps.find(g =>
+                        g.endHour === event.startTime.getHours() &&
+                        g.endMinute === event.startTime.getMinutes()
+                      );
 
-                          const isRecommendation = event.source === 'recommendation';
-                          const isExpanded = expandedEventIds.has(event.id);
+                      return (
+                        <React.Fragment key={event.id}>
+                          {/* Gap Block with Recommendations */}
+                          {gapBefore && recommendations.length > 0 && onAddRecommendation && (
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 my-3">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                  </svg>
+                                  <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                                    Add activity here
+                                  </span>
+                                </div>
+                                <span className="text-xs text-blue-600 dark:text-blue-400">
+                                  {Math.floor(gapBefore.durationMinutes / 60)}h {Math.floor(gapBefore.durationMinutes % 60)}m free
+                                </span>
+                              </div>
 
-                          return (
-                            <React.Fragment key={event.id}>
-                              {/* Event Card */}
+                              {/* Recommendation Carousel */}
+                              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                                {recommendations.slice(0, 5).map((rec) => (
+                                  <div
+                                    key={rec.id}
+                                    className="flex-shrink-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                                    onClick={() => onAddRecommendation(rec)}
+                                  >
+                                    {rec.image && (
+                                      <div className="relative h-24 w-full">
+                                        <Image
+                                          src={rec.image}
+                                          alt={rec.title}
+                                          fill
+                                          className="object-cover"
+                                          sizes="200px"
+                                        />
+                                      </div>
+                                    )}
+                                    <div className="p-3">
+                                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1 mb-1">
+                                        {rec.title}
+                                      </h4>
+                                      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                                        <span>{rec.duration}</span>
+                                        <span>{rec.price}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Event Card */}
+                          <div className="flex gap-3">
+                            {/* Time Column */}
+                            <div className="flex-shrink-0 w-16 pt-1">
+                              <div className="text-sm font-bold text-gray-900 dark:text-white">
+                                {formatTime(event.startTime)}
+                              </div>
+                            </div>
+
+                            {/* Event Content */}
+                            <div className="flex-1">
                               <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                className="relative"
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.03 }}
                               >
                                 <div
-                                  className={`rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer border overflow-hidden group ${
+                                  className={`rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer border overflow-hidden group ${
                                     isRecommendation
                                       ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800'
                                       : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
@@ -243,42 +411,19 @@ export default function ItineraryPanel({
                                   }}
                                 >
                                   <div className="p-3">
-                                    {/* Compact Header */}
-                                    <div className="flex items-start justify-between gap-2 mb-2">
-                                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        {/* Time */}
-                                        <span className={`text-sm font-bold whitespace-nowrap ${
-                                          isRecommendation
-                                            ? 'text-purple-700 dark:text-purple-300'
-                                            : 'text-gray-900 dark:text-white'
-                                        }`}>
-                                          {formatTime(event.startTime)}
-                                        </span>
-                                        {/* Title */}
-                                        <h3 className={`text-sm font-semibold truncate ${
-                                          isRecommendation
-                                            ? 'text-purple-900 dark:text-purple-100'
-                                            : 'text-gray-900 dark:text-white'
-                                        }`}>
-                                          {event.title}
-                                        </h3>
-                                      </div>
-
-                                      {/* Actions */}
-                                      <div className="flex items-center gap-1 flex-shrink-0">
-                                        {/* Expand/Collapse for recommendations */}
+                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                      <h3 className={`text-sm font-semibold flex-1 ${
+                                        isRecommendation
+                                          ? 'text-purple-900 dark:text-purple-100'
+                                          : 'text-gray-900 dark:text-white'
+                                      }`}>
+                                        {event.title}
+                                      </h3>
+                                      <div className="flex items-center gap-1">
                                         {isRecommendation && (
-                                          <div className={`p-1 rounded-full ${
-                                            isExpanded ? 'bg-purple-200 dark:bg-purple-700' : ''
-                                          }`}>
+                                          <div className={`p-0.5 rounded-full ${isExpanded ? 'bg-purple-200 dark:bg-purple-700' : ''}`}>
                                             <svg
-                                              className={`w-4 h-4 transition-transform ${
-                                                isExpanded ? 'rotate-180' : ''
-                                              } ${
-                                                isRecommendation
-                                                  ? 'text-purple-600 dark:text-purple-400'
-                                                  : 'text-gray-400'
-                                              }`}
+                                              className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''} text-purple-600 dark:text-purple-400`}
                                               fill="none"
                                               stroke="currentColor"
                                               viewBox="0 0 24 24"
@@ -287,104 +432,102 @@ export default function ItineraryPanel({
                                             </svg>
                                           </div>
                                         )}
-                                        {/* Remove Button */}
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            onRemoveEvent(event.id);
-                                          }}
-                                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500 hover:bg-red-600 rounded-full text-white"
-                                          aria-label="Remove event"
-                                        >
-                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                          </svg>
-                                        </button>
+                                        {/* Only show remove button for non-calendar events */}
+                                        {event.source !== 'google_calendar' && (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onRemoveEvent(event.id);
+                                            }}
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500 hover:bg-red-600 rounded-full text-white"
+                                            aria-label="Remove event"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
 
-                                    {/* Compact Details - Always visible */}
                                     <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                                      {/* Duration */}
-                                      <div className="flex items-center gap-1">
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <span>{getDuration(event.startTime, event.endTime)}</span>
-                                      </div>
-
-                                      {/* Source Badge */}
-                                      <div className="flex items-center gap-1">
+                                      <span>{getDuration(event.startTime, event.endTime)}</span>
+                                      <span className="flex items-center gap-1">
                                         {getSourceIcon(event.source)}
-                                        <span>
-                                          {event.source === 'recommendation' ? 'Activity' : event.source === 'google_calendar' ? 'Calendar' : 'Manual'}
-                                        </span>
-                                      </div>
+                                      </span>
                                     </div>
 
-                                    {/* Expandable Details - Only for recommendations */}
-                                    {isRecommendation && isExpanded && (
+                                    {isRecommendation && isExpanded && event.description && (
                                       <motion.div
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
                                         transition={{ duration: 0.2 }}
-                                        className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800"
+                                        className="mt-2 pt-2 border-t border-purple-200 dark:border-purple-800"
                                       >
-                                        {/* Description */}
-                                        {event.description && (
-                                          <p className="text-sm text-purple-800 dark:text-purple-200 mb-3">
-                                            {event.description}
-                                          </p>
-                                        )}
-
-                                        {/* Location */}
-                                        <div className="flex items-start gap-2 text-sm text-purple-700 dark:text-purple-300">
-                                          <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                          </svg>
-                                          <span>
-                                            {event.location.name}
-                                          </span>
-                                        </div>
+                                        <p className="text-xs text-purple-800 dark:text-purple-200">
+                                          {event.description}
+                                        </p>
                                       </motion.div>
                                     )}
                                   </div>
                                 </div>
                               </motion.div>
+                            </div>
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
 
-                              {/* Travel Segment Between Events */}
-                              {nextEvent && (
-                                <motion.div
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  transition={{ delay: index * 0.05 + 0.1 }}
-                                  className="flex items-center justify-center py-2"
-                                >
-                                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded-full">
-                                    {/* Travel Mode Icon */}
-                                    {travelMode === 'walking' ? (
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                      </svg>
-                                    ) : (
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                      </svg>
-                                    )}
-                                    <span>
-                                      {formatDistance(distance)} • {formatTravelTime(travelTime)}
-                                    </span>
-                                  </div>
-                                </motion.div>
+                    {/* Final gap after all events */}
+                    {gaps.length > 0 && gaps[gaps.length - 1].endHour >= dayEvents[dayEvents.length - 1]?.endTime.getHours() && recommendations.length > 0 && onAddRecommendation && (
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 mt-3">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                              Add activity here
+                            </span>
+                          </div>
+                          <span className="text-xs text-blue-600 dark:text-blue-400">
+                            Evening slot
+                          </span>
+                        </div>
+
+                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                          {recommendations.slice(0, 5).map((rec) => (
+                            <div
+                              key={rec.id}
+                              className="flex-shrink-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                              onClick={() => onAddRecommendation(rec)}
+                            >
+                              {rec.image && (
+                                <div className="relative h-24 w-full">
+                                  <Image
+                                    src={rec.image}
+                                    alt={rec.title}
+                                    fill
+                                    className="object-cover"
+                                    sizes="200px"
+                                  />
+                                </div>
                               )}
-                            </React.Fragment>
-                          );
-                        })}
+                              <div className="p-3">
+                                <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1 mb-1">
+                                  {rec.title}
+                                </h4>
+                                <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                                  <span>{rec.duration}</span>
+                                  <span>{rec.price}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
                 </div>
               )}
             </div>

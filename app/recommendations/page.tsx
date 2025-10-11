@@ -199,6 +199,8 @@ export default function RecommendationsPage() {
           console.log('Event clicked:', event);
         }}
         onImportCalendar={handleImportCalendar}
+        recommendations={recommendations}
+        onAddRecommendation={handleAddToItinerary}
       />
 
       {/* Expanded Detail Card - Bottom Sheet */}
