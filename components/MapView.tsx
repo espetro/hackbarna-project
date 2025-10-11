@@ -4,16 +4,24 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Map, { Marker, NavigationControl, Source, Layer } from 'react-map-gl/mapbox';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Recommendation } from '@/lib/types';
+import { Recommendation, ItineraryEvent } from '@/lib/types';
 import type { MapRef } from 'react-map-gl/mapbox';
 
 interface MapViewProps {
   recommendations: Recommendation[];
   selectedId: number | null;
   onMarkerClick: (id: number) => void;
+  itineraryEvents?: ItineraryEvent[];
+  onItineraryMarkerClick?: (event: ItineraryEvent) => void;
 }
 
-export default function MapView({ recommendations, selectedId, onMarkerClick }: MapViewProps) {
+export default function MapView({ 
+  recommendations, 
+  selectedId, 
+  onMarkerClick,
+  itineraryEvents = [],
+  onItineraryMarkerClick 
+}: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
 
   // Default to Paris coordinates
@@ -25,16 +33,21 @@ export default function MapView({ recommendations, selectedId, onMarkerClick }: 
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 
-  // Auto-zoom to fit all markers when recommendations change
+  // Auto-zoom to fit all markers when recommendations or itinerary events change
   useEffect(() => {
-    if (recommendations.length > 0 && mapRef.current) {
-      const bounds = recommendations.reduce(
-        (bounds, rec) => {
-          return bounds.extend([rec.location.lng, rec.location.lat]);
+    const allLocations = [
+      ...recommendations.map(r => ({ lng: r.location.lng, lat: r.location.lat })),
+      ...itineraryEvents.map(e => ({ lng: e.location.lng, lat: e.location.lat }))
+    ];
+
+    if (allLocations.length > 0 && mapRef.current) {
+      const bounds = allLocations.reduce(
+        (bounds, loc) => {
+          return bounds.extend([loc.lng, loc.lat]);
         },
         new mapboxgl.LngLatBounds(
-          [recommendations[0].location.lng, recommendations[0].location.lat],
-          [recommendations[0].location.lng, recommendations[0].location.lat]
+          [allLocations[0].lng, allLocations[0].lat],
+          [allLocations[0].lng, allLocations[0].lat]
         )
       );
 
@@ -43,7 +56,7 @@ export default function MapView({ recommendations, selectedId, onMarkerClick }: 
         duration: 1000
       });
     }
-  }, [recommendations]);
+  }, [recommendations, itineraryEvents]);
 
   // Create GeoJSON for the route line
   const routeGeoJSON = {
@@ -131,6 +144,39 @@ export default function MapView({ recommendations, selectedId, onMarkerClick }: 
               }`}
             >
               {index + 1}
+            </div>
+          </div>
+        </Marker>
+      ))}
+
+      {/* Markers for itinerary events - Grey markers in time order */}
+      {itineraryEvents.map((event, index) => (
+        <Marker
+          key={event.id}
+          longitude={event.location.lng}
+          latitude={event.location.lat}
+          anchor="bottom"
+          onClick={(e) => {
+            e.originalEvent.stopPropagation();
+            if (onItineraryMarkerClick) {
+              onItineraryMarkerClick(event);
+            }
+          }}
+        >
+          <div className="cursor-pointer transition-all duration-300 hover:scale-110">
+            {/* Grey circular marker with time order number */}
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-lg bg-gray-600 border-2 border-gray-400">
+                {index + 1}
+              </div>
+              {/* Time label below marker */}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 px-2 py-0.5 bg-gray-800/90 text-white text-xs rounded whitespace-nowrap">
+                {event.startTime.toLocaleTimeString('en-US', { 
+                  hour: 'numeric', 
+                  minute: '2-digit',
+                  hour12: true 
+                })}
+              </div>
             </div>
           </div>
         </Marker>

@@ -5,15 +5,27 @@ import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import MapView from '@/components/MapView';
 import SwipeableCardStack from '@/components/SwipeableCardStack';
+import ItineraryPanel from '@/components/ItineraryPanel';
+import ItineraryMenu from '@/components/ItineraryMenu';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { Recommendation } from '@/lib/types';
+import { Recommendation, ItineraryEvent } from '@/lib/types';
+import { initGoogleCalendarAPI, importGoogleCalendarEvents } from '@/lib/googleCalendar';
 
 export default function RecommendationsPage() {
   const router = useRouter();
-  const { recommendations, setSelectedRecommendation } = useAppContext();
+  const { 
+    recommendations, 
+    setSelectedRecommendation,
+    itineraryEvents,
+    addItineraryEvent,
+    removeItineraryEvent,
+    importGoogleCalendarEvents: importToContext,
+  } = useAppContext();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [expandedCard, setExpandedCard] = useState<Recommendation | null>(null);
+  const [isItineraryOpen, setIsItineraryOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Redirect to inspiration page if no recommendations
   useEffect(() => {
@@ -25,6 +37,89 @@ export default function RecommendationsPage() {
   const handleBook = (rec: Recommendation) => {
     setSelectedRecommendation(rec);
     router.push('/thank-you');
+  };
+
+  // Add recommendation to itinerary
+  const handleAddToItinerary = (rec: Recommendation) => {
+    // Create a time slot - default to next available hour
+    const now = new Date();
+    const startTime = new Date(now);
+    startTime.setHours(now.getHours() + 1, 0, 0, 0);
+    
+    // Parse duration if available (e.g., "3 hours" -> 3)
+    let durationHours = 2; // default
+    if (rec.duration) {
+      const match = rec.duration.match(/(\d+)/);
+      if (match) {
+        durationHours = parseInt(match[1]);
+      }
+    }
+    
+    const endTime = new Date(startTime);
+    endTime.setHours(startTime.getHours() + durationHours);
+
+    const itineraryEvent: ItineraryEvent = {
+      id: `rec-${rec.id}-${Date.now()}`,
+      title: rec.title,
+      description: rec.description,
+      location: {
+        name: rec.title,
+        lat: rec.location.lat,
+        lng: rec.location.lng,
+      },
+      startTime,
+      endTime,
+      source: 'recommendation',
+      recommendationId: rec.id,
+      image: rec.image,
+    };
+
+    addItineraryEvent(itineraryEvent);
+    
+    // Show success feedback
+    alert(`✓ "${rec.title}" added to your itinerary!`);
+  };
+
+  // Import events from Google Calendar
+  const handleImportCalendar = async () => {
+    if (isImporting) return;
+
+    setIsImporting(true);
+    try {
+      // Initialize Google Calendar API
+      const initialized = await initGoogleCalendarAPI();
+      if (!initialized) {
+        alert('Failed to initialize Google Calendar. Please check your API credentials.');
+        return;
+      }
+
+      // Import events from next 7 days
+      const events = await importGoogleCalendarEvents();
+      
+      if (events.length === 0) {
+        alert('No events found in your calendar for the next 7 days.');
+        return;
+      }
+
+      // Add events to context
+      importToContext(events);
+      
+      // Show success message
+      alert(`✓ Successfully imported ${events.length} event(s) from Google Calendar!`);
+      
+      // Open itinerary to show imported events
+      setIsItineraryOpen(true);
+    } catch (error) {
+      console.error('Error importing calendar:', error);
+      alert('Failed to import Google Calendar events. Please make sure you have granted the necessary permissions.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Handle clicking on an itinerary event marker
+  const handleItineraryMarkerClick = (event: ItineraryEvent) => {
+    setIsItineraryOpen(true);
   };
 
   if (recommendations.length === 0) {
@@ -47,6 +142,8 @@ export default function RecommendationsPage() {
               setExpandedCard(recommendations[index]);
             }
           }}
+          itineraryEvents={itineraryEvents}
+          onItineraryMarkerClick={handleItineraryMarkerClick}
         />
         {/* Overlay to dim the map slightly - allows pointer events to pass through */}
         <div className="absolute inset-0 bg-black/20 dark:bg-black/40 pointer-events-none" />
@@ -59,6 +156,26 @@ export default function RecommendationsPage() {
         onIndexChange={setCurrentIndex}
         onCardClick={(rec) => setExpandedCard(rec)}
         onBook={handleBook}
+        onAddToItinerary={handleAddToItinerary}
+      />
+
+      {/* Itinerary Menu - Floating Action Button */}
+      <ItineraryMenu
+        onOpenItinerary={() => setIsItineraryOpen(true)}
+        onImportCalendar={handleImportCalendar}
+        eventCount={itineraryEvents.length}
+      />
+
+      {/* Itinerary Panel - Slide-out */}
+      <ItineraryPanel
+        isOpen={isItineraryOpen}
+        onClose={() => setIsItineraryOpen(false)}
+        events={itineraryEvents}
+        onRemoveEvent={removeItineraryEvent}
+        onEventClick={(event) => {
+          // Could expand event details here
+          console.log('Event clicked:', event);
+        }}
       />
 
       {/* Expanded Detail Card - Bottom Sheet */}
@@ -145,16 +262,29 @@ export default function RecommendationsPage() {
                   )}
                 </div>
 
-                {/* Action Button */}
+                {/* Action Buttons */}
                 <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-                  <button
-                    onClick={() => {
-                      handleBook(expandedCard);
-                    }}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-full font-semibold transition-all duration-200 text-lg"
-                  >
-                    Book Now
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        handleAddToItinerary(expandedCard);
+                      }}
+                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-4 rounded-full font-semibold transition-all duration-200 text-base flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add to Itinerary
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleBook(expandedCard);
+                      }}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-full font-semibold transition-all duration-200 text-base"
+                    >
+                      Book Now
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
