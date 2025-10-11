@@ -290,36 +290,72 @@ export async function getSuggestedActivities(): Promise<Recommendation[]> {
     snapshot.forEach((doc) => {
       const data = doc.data();
       
-      // Parse coordinates and fix missing decimal points
-      let lat = typeof data.locationLat === 'string' ? parseFloat(data.locationLat) : data.locationLat;
-      let lng = typeof data.locationLng === 'string' ? parseFloat(data.locationLng) : data.locationLng;
-      
-      // Fix coordinates that are missing decimal points (e.g., '488571' should be '48.8571')
-      if (lat && lat > 90) {
-        // If latitude is > 90, it's likely missing a decimal point
-        const latStr = lat.toString();
-        if (latStr.length >= 6) {
-          lat = parseFloat(latStr.slice(0, 2) + '.' + latStr.slice(2));
+      // Helper function to fix coordinates with missing decimal points
+      const fixCoordinate = (coordStr: string | number, isLatitude: boolean): number | null => {
+        if (typeof coordStr === 'number') {
+          coordStr = coordStr.toString();
         }
-      }
-      
-      if (lng && Math.abs(lng) > 180) {
-        // If longitude is > 180 or < -180, it's likely missing a decimal point
-        const lngStr = lng.toString();
-        if (lngStr.length >= 5) {
-          const isNegative = lngStr.startsWith('-');
-          const absStr = isNegative ? lngStr.slice(1) : lngStr;
-          const fixedLng = parseFloat(absStr.slice(0, 1) + '.' + absStr.slice(1));
-          lng = isNegative ? -fixedLng : fixedLng;
+        
+        if (typeof coordStr !== 'string') {
+          return null;
         }
-      }
+        
+        // Remove any whitespace
+        coordStr = coordStr.trim();
+        
+        // Try parsing as-is first
+        let coord = parseFloat(coordStr);
+        
+        if (isNaN(coord)) {
+          return null;
+        }
+        
+        // Check if coordinate is already in valid range
+        if (isLatitude && coord >= -90 && coord <= 90) {
+          return coord;
+        }
+        if (!isLatitude && coord >= -180 && coord <= 180) {
+          return coord;
+        }
+        
+        // If coordinate is out of range, try to fix by adding decimal point
+        const coordString = Math.abs(coord).toString();
+        
+        if (isLatitude) {
+          // For latitude: expected format like 48.xxxx (Paris), so 488589 → 48.8589
+          if (coordString.length >= 3) {
+            const fixed = parseFloat(coordString.slice(0, 2) + '.' + coordString.slice(2));
+            if (fixed >= -90 && fixed <= 90) {
+              return coord < 0 ? -fixed : fixed;
+            }
+          }
+        } else {
+          // For longitude: expected format like 2.xxxx (Paris), so 23469 → 2.3469
+          if (coordString.length >= 2) {
+            let decimalPos = 1;
+            // For larger numbers, might need decimal after 2 digits (e.g., European coords)
+            if (coordString.length >= 4 && coordString.startsWith('1')) {
+              decimalPos = 2; // e.g., 123456 → 12.3456 
+            }
+            
+            const fixed = parseFloat(coordString.slice(0, decimalPos) + '.' + coordString.slice(decimalPos));
+            if (fixed >= -180 && fixed <= 180) {
+              return coord < 0 ? -fixed : fixed;
+            }
+          }
+        }
+        
+        return null; // Could not fix coordinate
+      };
+      
+      // Parse and fix coordinates
+      const lat = fixCoordinate(data.locationLat, true);
+      const lng = fixCoordinate(data.locationLng, false);
       
       // Validate coordinates before adding to activities
       if (
-        typeof lat === 'number' && 
-        typeof lng === 'number' && 
-        !isNaN(lat) && 
-        !isNaN(lng) &&
+        lat !== null && 
+        lng !== null &&
         lat >= -90 && lat <= 90 &&
         lng >= -180 && lng <= 180
       ) {
