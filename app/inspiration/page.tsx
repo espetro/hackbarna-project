@@ -8,8 +8,6 @@ import { mockRecommendations } from '@/lib/mockData';
 import Logo from '@/components/Logo';
 import { BackgroundLines } from '@/components/BackgroundLines';
 import { motion } from 'framer-motion';
-// Import Firebase test for debugging (remove in production)
-import '@/lib/testFirebase';
 
 // Inspiration images - using Unsplash for demo purposes
 const inspirationImages = [
@@ -80,7 +78,7 @@ export default function InspirationPage() {
       // Check if API endpoint is configured
       const apiEndpoint = process.env.NEXT_PUBLIC_RECOMMENDATIONS_API;
 
-      if (apiEndpoint && apiEndpoint.trim() !== '') {
+      if (apiEndpoint && typeof apiEndpoint === 'string' && apiEndpoint.trim() !== '') {
         // Make API call if endpoint is configured
         console.log('Using API endpoint:', apiEndpoint);
         const response = await fetch(apiEndpoint, {
@@ -110,17 +108,27 @@ export default function InspirationPage() {
       }
     } catch (err) {
       console.error('Error fetching recommendations:', err);
+      setError('Unable to connect to recommendation service. Loading suggested activities instead...');
 
       // Fallback to Firebase suggested activities
       console.log('API call failed, trying Firebase suggested activities...');
       try {
         await loadSuggestedActivities();
+        setError(''); // Clear error if Firebase works
         router.push('/recommendations');
       } catch (fbErr) {
-        console.error('Firebase also failed, using mock data as final fallback');
-        const { mockRecommendations } = await import('@/lib/mockData');
-        setRecommendations(mockRecommendations);
-        router.push('/recommendations');
+        console.error('Firebase also failed:', fbErr);
+        console.log('Using mock data as final fallback');
+        
+        try {
+          const { mockRecommendations } = await import('@/lib/mockData');
+          setRecommendations(mockRecommendations);
+          setError(''); // Clear error if mock data works
+          router.push('/recommendations');
+        } catch (mockErr) {
+          console.error('Even mock data failed:', mockErr);
+          setError('Unable to load recommendations. Please try again.');
+        }
       }
     } finally {
       setIsLoading(false);
