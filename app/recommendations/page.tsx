@@ -145,11 +145,6 @@ export default function RecommendationsPage() {
     setIsItineraryOpen(true);
   };
 
-  const handleSeeWeekActivities = () => {
-    // Filter activities for this week
-    setIsItineraryOpen(true);
-  };
-
   if (recommendations.length === 0) {
     return null; // Will redirect
   }
@@ -192,24 +187,6 @@ export default function RecommendationsPage() {
         onOpenItinerary={() => setIsItineraryOpen(true)}
         eventCount={itineraryEvents.length}
       />
-
-      {/* Floating Action Button - Bottom Center */}
-      <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-30">
-        <motion.button
-          onClick={handleSeeWeekActivities}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all flex items-center gap-3 px-8 py-4"
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 20 }}
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span className="font-bold text-lg">See Activities for This Week</span>
-        </motion.button>
-      </div>
 
       {/* Itinerary Panel - Slide-out */}
       <ItineraryPanel

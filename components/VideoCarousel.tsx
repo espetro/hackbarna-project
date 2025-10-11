@@ -285,6 +285,7 @@ export default function VideoCarousel({
               preload="metadata"
               className="w-full h-full object-cover"
               aria-hidden={!isActive}
+              suppressHydrationWarning
             />
 
             {/* Overlay gradient and caption - only if showCaptions is true */}
