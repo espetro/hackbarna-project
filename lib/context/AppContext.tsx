@@ -29,37 +29,71 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
-  const [userQuery, setUserQuery] = useState<string>('');
-  const [favoriteAttractions, setFavoriteAttractions] = useState<Attraction[]>([]);
+  const [recommendations, setRecommendationsState] = useState<Recommendation[]>([]);
+  const [selectedRecommendation, setSelectedRecommendationState] = useState<Recommendation | null>(null);
+  const [userQuery, setUserQueryState] = useState<string>('');
+  const [favoriteAttractions, setFavoriteAttractionsState] = useState<Attraction[]>([]);
   const [itineraryEvents, setItineraryEvents] = useState<ItineraryEvent[]>([]);
+
+  // Wrapped setters with logging
+  const setRecommendations = useCallback((recs: Recommendation[]) => {
+    console.log('🎯 Recommendations updated:', recs.length, 'items');
+    setRecommendationsState(recs);
+  }, []);
+
+  const setSelectedRecommendation = useCallback((rec: Recommendation | null) => {
+    console.log('👆 Selected recommendation:', rec?.title || 'None');
+    setSelectedRecommendationState(rec);
+  }, []);
+
+  const setUserQuery = useCallback((query: string) => {
+    console.log('🔍 User query set:', query);
+    setUserQueryState(query);
+  }, []);
+
+  const setFavoriteAttractions = useCallback((attractions: Attraction[]) => {
+    console.log('⭐ Favorite attractions updated:', attractions.length, 'items');
+    setFavoriteAttractionsState(attractions);
+  }, []);
 
   // Add a single event to itinerary
   const addItineraryEvent = useCallback((event: ItineraryEvent) => {
+    console.log('📅 Adding to itinerary:', event.title);
     setItineraryEvents((prev) => {
       // Check if event already exists
       const exists = prev.some(e => e.id === event.id);
-      if (exists) return prev;
+      if (exists) {
+        console.log('⚠️ Event already exists in itinerary');
+        return prev;
+      }
       
       // Add and sort by startTime
       const updated = [...prev, event];
-      return updated.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+      const sorted = updated.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+      console.log('✅ Itinerary updated. Total events:', sorted.length);
+      return sorted;
     });
   }, []);
 
   // Remove event from itinerary
   const removeItineraryEvent = useCallback((eventId: string) => {
-    setItineraryEvents((prev) => prev.filter(e => e.id !== eventId));
+    console.log('🗑️ Removing from itinerary:', eventId);
+    setItineraryEvents((prev) => {
+      const filtered = prev.filter(e => e.id !== eventId);
+      console.log('✅ Event removed. Total events:', filtered.length);
+      return filtered;
+    });
   }, []);
 
   // Clear all itinerary events
   const clearItinerary = useCallback(() => {
+    console.log('🧹 Clearing all itinerary events');
     setItineraryEvents([]);
   }, []);
 
   // Import multiple events from Google Calendar
   const importGoogleCalendarEvents = useCallback((events: ItineraryEvent[]) => {
+    console.log('📥 Importing events from calendar:', events.length, 'events');
     setItineraryEvents((prev) => {
       // Merge with existing, avoiding duplicates
       const existingIds = new Set(prev.map(e => e.id));
@@ -67,7 +101,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const merged = [...prev, ...newEvents];
       
       // Sort by startTime
-      return merged.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+      const sorted = merged.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+      console.log('✅ Calendar import complete. New events:', newEvents.length, '| Total:', sorted.length);
+      return sorted;
     });
   }, []);
 

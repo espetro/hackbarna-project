@@ -27,6 +27,8 @@ export default function RecommendationsPage() {
   const [expandedCard, setExpandedCard] = useState<Recommendation | null>(null);
   const [isItineraryOpen, setIsItineraryOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Redirect to inspiration page if no recommendations
   useEffect(() => {
@@ -78,8 +80,10 @@ export default function RecommendationsPage() {
 
     addItineraryEvent(itineraryEvent);
     
-    // Show success feedback
-    alert(`✓ "${rec.title}" added to your itinerary!`);
+    // Show success feedback with subtle animation
+    setToastMessage(`"${rec.title}" added to itinerary`);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
   };
 
   // Import events from Google Calendar (with mock data fallback for demo)
@@ -203,6 +207,33 @@ export default function RecommendationsPage() {
         recommendations={recommendations}
         onAddRecommendation={handleAddToItinerary}
       />
+
+      {/* Toast Notification for Added Items */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] pointer-events-none"
+          >
+            <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-6 py-4 rounded-full shadow-2xl border-2 border-blue-500 flex items-center gap-3">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 500, damping: 25 }}
+                className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center"
+              >
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </motion.div>
+              <span className="font-semibold">{toastMessage}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Expanded Detail Card - Bottom Sheet */}
       <AnimatePresence>
