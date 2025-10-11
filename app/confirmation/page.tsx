@@ -36,27 +36,27 @@ export default function ConfirmationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-y-auto">
+      <div className="w-full max-w-3xl py-8">
         {/* Success Animation/Icon */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-green-500 rounded-full mb-4 animate-bounce">
-            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-4 shadow-xl">
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Booked!
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+            Booking Confirmed!
           </h1>
-          <p className="text-xl text-gray-700">
-            We have added this experience to your calendar.
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            Your experience has been added to your itinerary
           </p>
         </div>
 
         {/* Experience Details Card */}
-        <div className="bg-white rounded-xl shadow-xl overflow-hidden mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden mb-6 border-2 border-gray-100 dark:border-gray-700">
           {/* Image */}
-          <div className="relative h-64 w-full">
+          <div className="relative h-56 w-full">
             <Image
               src={selectedRecommendation.image}
               alt={selectedRecommendation.title}
@@ -68,87 +68,66 @@ export default function ConfirmationPage() {
 
           {/* Details */}
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
               {selectedRecommendation.title}
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               {selectedRecommendation.description}
             </p>
 
             {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
               {selectedRecommendation.duration && (
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Duration</p>
-                  <p className="font-semibold text-gray-900">{selectedRecommendation.duration}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Duration</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{selectedRecommendation.duration}</p>
                 </div>
               )}
               {selectedRecommendation.price && (
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Price</p>
-                  <p className="font-semibold text-gray-900">{selectedRecommendation.price}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Price</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{selectedRecommendation.price}</p>
                 </div>
               )}
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Location</p>
-                <p className="font-semibold text-gray-900">
-                  {selectedRecommendation.location.lat.toFixed(4)}, {selectedRecommendation.location.lng.toFixed(4)}
+              <div className="col-span-2">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Status</p>
+                <p className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Confirmed
                 </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Status</p>
-                <p className="font-semibold text-green-600">Confirmed</p>
               </div>
             </div>
 
             {/* Add to Calendar Button */}
             <button
               onClick={handleAddToCalendar}
-              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-3"
+              className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-full transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              Open Google Calendar
+              Add to Google Calendar
             </button>
-
-            {/* Info Text */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <p className="text-sm text-blue-900 font-medium mb-1">Next Steps</p>
-                  <p className="text-sm text-blue-800">
-                    Check your email for booking confirmation and details. The experience provider will contact you shortly with final arrangements.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <button
-            onClick={handleExploreMore}
-            className="flex-1 px-6 py-3 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-colors duration-200"
-          >
-            Explore More Experiences
-          </button>
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <button
             onClick={handleViewRecommendations}
-            className="flex-1 px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg border-2 border-gray-300 transition-colors duration-200"
+            className="flex-1 px-6 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-full border-2 border-gray-300 dark:border-gray-600 transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            Back to Results
+            View More Recommendations
+          </button>
+          <button
+            onClick={handleExploreMore}
+            className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-full transition-all duration-200"
+          >
+            Start New Search
           </button>
         </div>
-
-        {/* Footer Note */}
-        <p className="text-center text-gray-500 text-sm mt-8">
-          Have questions? Contact us at support@tetristravel.com
-        </p>
       </div>
     </div>
   );
