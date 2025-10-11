@@ -35,10 +35,11 @@ export default function RecommendationsPage() {
     }
   }, [recommendations, router]);
 
-  const handleBook = (rec: Recommendation) => {
-    setSelectedRecommendation(rec);
-    router.push('/thank-you');
-  };
+  // Booking functionality removed - commented out
+  // const handleBook = (rec: Recommendation) => {
+  //   setSelectedRecommendation(rec);
+  //   router.push('/thank-you');
+  // };
 
   // Add recommendation to itinerary
   const handleAddToItinerary = (rec: Recommendation) => {
@@ -178,7 +179,7 @@ export default function RecommendationsPage() {
         currentIndex={currentIndex}
         onIndexChange={setCurrentIndex}
         onCardClick={(rec) => setExpandedCard(rec)}
-        onBook={handleBook}
+        // onBook={handleBook} // Removed - booking functionality disabled
         onAddToItinerary={handleAddToItinerary}
       />
 
@@ -289,27 +290,27 @@ export default function RecommendationsPage() {
 
                 {/* Action Buttons */}
                 <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        handleAddToItinerary(expandedCard);
-                      }}
-                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-4 rounded-full font-semibold transition-all duration-200 text-base flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Add to Itinerary
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleBook(expandedCard);
-                      }}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-full font-semibold transition-all duration-200 text-base"
-                    >
-                      Book Now
-                    </button>
-                  </div>
+                  {/* Add to Itinerary Button - Now full width */}
+                  <button
+                    onClick={() => {
+                      handleAddToItinerary(expandedCard);
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-full font-semibold transition-all duration-200 text-base flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add to Itinerary
+                  </button>
+                  {/* Book Now Button - REMOVED */}
+                  {/* <button
+                    onClick={() => {
+                      handleBook(expandedCard);
+                    }}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-full font-semibold transition-all duration-200 text-base"
+                  >
+                    Book Now
+                  </button> */}
                 </div>
               </div>
             </motion.div>

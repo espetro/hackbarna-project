@@ -1,3 +1,13 @@
+/*
+ * THANK YOU / BOOKING SUCCESS PAGE - CURRENTLY DISABLED
+ * 
+ * This page has been commented out as booking functionality has been removed.
+ * The app now focuses on itinerary management only.
+ * 
+ * To re-enable: uncomment the handleBook functions in recommendations/page.tsx
+ * and SwipeableCardStack.tsx
+ */
+
 'use client';
 
 import React, { useEffect, useState } from 'react';

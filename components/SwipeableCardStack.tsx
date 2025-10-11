@@ -10,7 +10,7 @@ interface SwipeableCardStackProps {
   currentIndex: number;
   onIndexChange: (index: number) => void;
   onCardClick: (rec: Recommendation) => void;
-  onBook: (rec: Recommendation) => void;
+  // onBook: (rec: Recommendation) => void; // Commented out - booking removed
   onAddToItinerary?: (rec: Recommendation) => void;
 }
 
@@ -19,7 +19,7 @@ export default function SwipeableCardStack({
   currentIndex,
   onIndexChange,
   onCardClick,
-  onBook,
+  // onBook, // Commented out - booking removed
   onAddToItinerary,
 }: SwipeableCardStackProps) {
   const x = useMotionValue(0);
@@ -112,34 +112,32 @@ export default function SwipeableCardStack({
 
             {/* Action Buttons */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-              <div className="flex gap-2">
-                {/* Add to Itinerary Button */}
-                {onAddToItinerary && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAddToItinerary(currentRec);
-                    }}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                    title="Add to Itinerary"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span className="hidden sm:inline">Itinerary</span>
-                  </button>
-                )}
-                {/* Book Now Button */}
+              {/* Add to Itinerary Button - Now full width */}
+              {onAddToItinerary && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onBook(currentRec);
+                    onAddToItinerary(currentRec);
                   }}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                  title="Add to Itinerary"
                 >
-                  Book Now
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Add to Itinerary</span>
                 </button>
-              </div>
+              )}
+              {/* Book Now Button - REMOVED */}
+              {/* <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBook(currentRec);
+                }}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                Book Now
+              </button> */}
             </div>
           </div>
         </motion.div>
