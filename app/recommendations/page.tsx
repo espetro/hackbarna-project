@@ -84,6 +84,12 @@ export default function RecommendationsPage() {
     setToastMessage(`"${rec.title}" added to itinerary`);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
+
+    // Auto-swipe to next card after 1 second
+    setTimeout(() => {
+      const nextIndex = (currentIndex + 1) % recommendations.length;
+      setCurrentIndex(nextIndex);
+    }, 1000);
   };
 
   // Import events from Google Calendar (with mock data fallback for demo)
@@ -325,6 +331,7 @@ export default function RecommendationsPage() {
                   <button
                     onClick={() => {
                       handleAddToItinerary(expandedCard);
+                      setExpandedCard(null); // Close the expanded view
                     }}
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-full font-semibold transition-all duration-200 text-base flex items-center justify-center gap-2"
                   >
