@@ -57,6 +57,20 @@ export default function MapView({
     isValidCoordinate(event.location.lat, event.location.lng)
   );
 
+  // Debug: Check for duplicate IDs in itinerary events
+  React.useEffect(() => {
+    const ids = itineraryEvents.map(e => e.id);
+    const uniqueIds = new Set(ids);
+    if (ids.length !== uniqueIds.size) {
+      console.error('🚨 Duplicate itinerary event IDs detected:', {
+        totalEvents: ids.length,
+        uniqueIds: uniqueIds.size,
+        duplicates: ids.filter((id, index) => ids.indexOf(id) !== index)
+      });
+      console.log('All event IDs:', ids);
+    }
+  }, [itineraryEvents]);
+
   // Log any invalid coordinates for debugging
   React.useEffect(() => {
     const invalidRecs = recommendations.filter(rec => 

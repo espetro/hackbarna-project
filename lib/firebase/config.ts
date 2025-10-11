@@ -12,13 +12,48 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase (singleton pattern)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// Check if Firebase config is valid
+const isFirebaseConfigured = () => {
+  return !!(
+    firebaseConfig.apiKey &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId &&
+    firebaseConfig.storageBucket &&
+    firebaseConfig.messagingSenderId &&
+    firebaseConfig.appId
+  );
+};
 
-// Initialize Firestore
-export const db = getFirestore(app);
+let app: any = null;
+let db: any = null;
+let auth: any = null;
 
-// Initialize Auth
-export const auth = getAuth(app);
+// Only initialize Firebase if all config values are present
+if (isFirebaseConfigured()) {
+  try {
+    // Initialize Firebase (singleton pattern)
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    
+    // Initialize Firestore
+    db = getFirestore(app);
+    
+    // Initialize Auth
+    auth = getAuth(app);
+    
+    console.log('✅ Firebase initialized successfully');
+  } catch (error) {
+    console.error('❌ Firebase initialization failed:', error);
+  }
+} else {
+  console.warn('⚠️ Firebase not configured. Missing environment variables in .env.local:');
+  console.warn('- NEXT_PUBLIC_FIREBASE_API_KEY');
+  console.warn('- NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
+  console.warn('- NEXT_PUBLIC_FIREBASE_PROJECT_ID'); 
+  console.warn('- NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET');
+  console.warn('- NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID');
+  console.warn('- NEXT_PUBLIC_FIREBASE_APP_ID');
+}
 
+// Export with null safety
+export { db, auth };
 export default app;

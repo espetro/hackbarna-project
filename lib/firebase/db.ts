@@ -282,6 +282,12 @@ export async function clearItinerary(
  */
 export async function getSuggestedActivities(): Promise<Recommendation[]> {
   try {
+    // Check if Firebase is properly initialized
+    if (!db) {
+      console.warn('⚠️ Firebase not initialized. Cannot fetch suggested activities.');
+      throw new Error('Firebase not configured - missing environment variables');
+    }
+
     const activitiesRef = collection(db, 'suggestedactivities');
     const q = query(activitiesRef, orderBy('id', 'asc'));
     const snapshot = await getDocs(q);
@@ -451,5 +457,112 @@ export async function importSuggestedActivities(activities: Recommendation[]): P
   } catch (error) {
     console.error('❌ Error importing suggested activities:', error);
     throw error;
+  }
+}
+
+// ==================== WEBHOOK ACTIVITIES ====================
+
+/**
+ * Save webhook-generated activities to user's collection
+ * This allows persistence of AI-generated recommendations
+ */
+export async function saveWebhookActivities(
+  activities: Recommendation[],
+  userId: string,
+  sessionId: string
+): Promise<void> {
+  try {
+    if (!db) {
+      console.warn('⚠️ Firebase not initialized. Cannot save webhook activities.');
+      return;
+    }
+
+    // Ensure user exists
+    await getOrCreateUser(userId);
+
+    const batch = writeBatch(db);
+
+    // Save to user's webhook activities collection
+    activities.forEach((activity) => {
+      const activityRef = doc(
+        db,
+        'users',
+        userId,
+        'webhookactivities',
+        `${sessionId}-${activity.id}`
+      );
+      batch.set(activityRef, {
+        id: activity.id,
+        sessionId: activity.sessionId || sessionId, // Use sessionId from activity or fallback
+        title: activity.title,
+        description: activity.description,
+        image: activity.image,
+        locationLat: activity.location.lat,
+        locationLng: activity.location.lng,
+        duration: activity.duration || '',
+        price: activity.price || '',
+        createdAt: Timestamp.now(),
+      });
+    });
+
+    await batch.commit();
+    console.log('✅ Saved', activities.length, 'webhook activities to Firebase for user:', userId, 'session:', sessionId);
+  } catch (error) {
+    console.error('❌ Error saving webhook activities:', error);
+    // Don't throw - allow the app to continue even if Firebase save fails
+  }
+}
+
+/**
+ * Get webhook activities for a user session
+ */
+export async function getWebhookActivities(
+  userId: string,
+  sessionId?: string
+): Promise<Recommendation[]> {
+  try {
+    if (!db) {
+      console.warn('⚠️ Firebase not initialized. Cannot fetch webhook activities.');
+      return [];
+    }
+
+    const activitiesRef = collection(db, 'users', userId, 'webhookactivities');
+
+    let q;
+    if (sessionId) {
+      q = query(
+        activitiesRef,
+        where('sessionId', '==', sessionId),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      q = query(activitiesRef, orderBy('createdAt', 'desc'));
+    }
+
+    const snapshot = await getDocs(q);
+
+    const activities: Recommendation[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      activities.push({
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        image: data.image,
+        location: {
+          lat: data.locationLat,
+          lng: data.locationLng,
+        },
+        duration: data.duration,
+        price: data.price,
+        sessionId: data.sessionId, // Include sessionId for filtering
+      });
+    });
+
+    console.log('📥 Loaded', activities.length, 'webhook activities from Firebase');
+    return activities;
+  } catch (error) {
+    console.error('❌ Error loading webhook activities:', error);
+    return [];
   }
 }

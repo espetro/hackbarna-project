@@ -6,47 +6,47 @@ import { FavoritesSelection } from '@/components/FavoritesSelection';
 import { useAppContext, type Attraction } from '@/lib/context/AppContext';
 import { motion } from 'framer-motion';
 
-// Attraction images from inspiration
+// Movie posters - user's favorite movies
 const allAttractions: Attraction[] = [
   {
     id: 1,
-    src: '/assets/barceloneta.png',
-    alt: 'Barceloneta experience',
+    src: '/images/amelie.png',
+    alt: 'Amelie',
   },
   {
     id: 2,
-    src: '/assets/flamenco.png',
-    alt: 'Flamenco Show',
+    src: '/images/barbie.webp',
+    alt: 'Barbie',
   },
   {
     id: 3,
-    src: '/assets/camp nou.png',
-    alt: 'Camp Nou',
+    src: '/images/forrest gump.jpg',
+    alt: 'Forrest Gump',
   },
   {
     id: 4,
-    src: '/assets/casa mila pedrera.png',
-    alt: 'La Pedrera',
+    src: '/images/harry potter.jpg',
+    alt: 'Harry Potter',
   },
   {
     id: 5,
-    src: '/assets/moco museum.png',
-    alt: 'Moco Museum',
+    src: '/images/matrix.jpg',
+    alt: 'Matrix',
   },
   {
     id: 6,
-    src: '/assets/parc guell.png',
-    alt: 'Parc Guell',
+    src: '/images/pulp fiction.jpg',
+    alt: 'Pulp Fiction',
   },
   {
     id: 7,
-    src: '/assets/safrada familia.png',
-    alt: 'Sagrada Familia',
+    src: '/images/schindlerslist.jpg',
+    alt: 'Schindler\'s List',
   },
   {
     id: 8,
-    src: '/assets/montserrat mountains.png',
-    alt: 'Montserrat Mountains',
+    src: '/images/starwars.jpg',
+    alt: 'Star Wars',
   },
 ];
 
@@ -82,7 +82,7 @@ export default function FavoritesPage() {
               transition={{ delay: 0.1 }}
               className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white"
             >
-              Select Your Favorites
+              Movie tastes?
             </motion.h1>
           </div>
 

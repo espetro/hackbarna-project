@@ -23,9 +23,12 @@ export default function RecommendationsPage() {
     itineraryEvents,
     addItineraryEvent,
     removeItineraryEvent,
+    clearItinerary,
     importGoogleCalendarEvents: importToContext,
     loadSuggestedActivities,
     suggestedActivitiesLoading,
+    smartSuggestions,
+    addSmartSuggestion,
   } = useAppContext();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [expandedCard, setExpandedCard] = useState<Recommendation | null>(null);
@@ -79,8 +82,11 @@ export default function RecommendationsPage() {
     const endTime = new Date(startTime);
     endTime.setHours(startTime.getHours() + durationHours);
 
+    // Generate a truly unique ID with random component to avoid collisions
+    const uniqueId = `rec-${rec.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     const itineraryEvent: ItineraryEvent = {
-      id: `rec-${rec.id}-${Date.now()}`,
+      id: uniqueId,
       title: rec.title,
       description: rec.description,
       location: {
@@ -119,6 +125,32 @@ export default function RecommendationsPage() {
   // Open calendar import modal
   const handleImportCalendar = () => {
     setIsCalendarModalOpen(true);
+  };
+
+  // Reset itinerary and go back to preferences
+  const handleResetItinerary = () => {
+    // Show confirmation dialog
+    const confirmReset = window.confirm(
+      'Are you sure you want to reset your itinerary? This will clear all activities and take you back to preferences selection.'
+    );
+    
+    if (confirmReset) {
+      // Clear all itinerary events
+      clearItinerary();
+      
+      // Close the itinerary panel
+      setIsItineraryOpen(false);
+      
+      // Show success message briefly
+      setToastMessage('Itinerary reset successfully');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+      
+      // Navigate back to favorites selection after a short delay
+      setTimeout(() => {
+        router.push('/favorites');
+      }, 1000);
+    }
   };
 
   // Import events from Google Calendar URL
@@ -275,8 +307,15 @@ export default function RecommendationsPage() {
           console.log('Event clicked:', event);
         }}
         onImportCalendar={handleImportCalendar}
+        onResetItinerary={handleResetItinerary}
         recommendations={availableRecommendations}
         onAddRecommendation={handleAddToItinerary}
+        smartSuggestions={smartSuggestions}
+        onAddSmartSuggestion={addSmartSuggestion}
+        onExpandSmartSuggestion={(suggestion) => {
+          // Could show smart suggestion details here
+          console.log('Smart suggestion clicked:', suggestion);
+        }}
       />
 
       {/* Enhanced Toast Notification for Added Items */}

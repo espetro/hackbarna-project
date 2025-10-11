@@ -4,9 +4,13 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAppContext } from '@/lib/context/AppContext';
+import { useAuth } from '@/lib/context/AuthContext';
 import { mockRecommendations } from '@/lib/mockData';
 import Logo from '@/components/Logo';
 import { BackgroundLines } from '@/components/BackgroundLines';
+import ThinkingScreen from '@/components/ThinkingScreen';
+import { sendWebhookRequest, parseWebhookResponse, generateSessionId } from '@/lib/webhookService';
+import { saveWebhookActivities } from '@/lib/firebase/db';
 import { motion } from 'framer-motion';
 
 // Inspiration images - using Unsplash for demo purposes
@@ -57,8 +61,10 @@ export default function InspirationPage() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showThinkingScreen, setShowThinkingScreen] = useState(false);
   const router = useRouter();
-  const { setRecommendations, setUserQuery, loadSuggestedActivities, suggestedActivitiesLoading } = useAppContext();
+  const { user } = useAuth();
+  const { setRecommendations, setUserQuery, loadSuggestedActivities, suggestedActivitiesLoading, favoriteAttractions, setCurrentSessionId } = useAppContext();
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,7 +81,66 @@ export default function InspirationPage() {
     setUserQuery(query);
 
     try {
-      // Check if API endpoint is configured
+      // Check if webhook is configured
+      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK;
+
+      if (webhookUrl && typeof webhookUrl === 'string' && webhookUrl.trim() !== '') {
+        // Use webhook integration
+        console.log('Using webhook integration...');
+
+        // Generate session ID for tracking
+        const sessionId = generateSessionId();
+        setCurrentSessionId(sessionId);
+
+        // Format favorite movies for the request
+        const favoriteMovieNames = favoriteAttractions.map(attr => attr.alt);
+        console.log('📽️ User favorite movies:', favoriteMovieNames);
+
+        // Show thinking screen and make webhook call
+        setShowThinkingScreen(true);
+        setIsLoading(false); // Not loading anymore, now thinking
+
+        try {
+          // Make webhook request
+          console.log('📞 Calling webhook with session:', sessionId);
+          console.log('📽️ Including favorite movies:', favoriteMovieNames);
+          const webhookResponse = await sendWebhookRequest(query, favoriteMovieNames);
+
+          // Parse response and set recommendations
+          console.log('📋 Parsing webhook response...');
+          const recommendations = parseWebhookResponse(webhookResponse, sessionId);
+
+          if (recommendations.length === 0) {
+            throw new Error('No valid activities received from webhook');
+          }
+
+          setRecommendations(recommendations);
+          setCurrentSessionId(sessionId); // Store session ID in context
+          console.log('✅ Set', recommendations.length, 'recommendations in context with session ID:', sessionId);
+
+          // Save to Firebase if user is authenticated
+          if (user) {
+            console.log('💾 Saving activities to Firebase...');
+            await saveWebhookActivities(recommendations, user.uid, sessionId);
+            console.log('✅ Activities saved to Firebase');
+          } else {
+            console.log('⚠️ User not authenticated, skipping Firebase save');
+          }
+
+          console.log('✅ Webhook integration successful');
+
+          // ThinkingScreen component will handle navigation after 30 seconds
+          return;
+
+        } catch (webhookError) {
+          console.error('Webhook failed, falling back to Firebase:', webhookError);
+          setShowThinkingScreen(false);
+          setCurrentSessionId(null);
+          // Continue to Firebase fallback below
+        }
+      }
+      
+      // Fallback: Check if API endpoint is configured
       const apiEndpoint = process.env.NEXT_PUBLIC_RECOMMENDATIONS_API;
 
       if (apiEndpoint && typeof apiEndpoint === 'string' && apiEndpoint.trim() !== '') {
@@ -134,6 +199,17 @@ export default function InspirationPage() {
       setIsLoading(false);
     }
   };
+
+  // Handle completion of thinking screen
+  const handleThinkingComplete = () => {
+    setShowThinkingScreen(false);
+    router.push('/recommendations');
+  };
+
+  // Show thinking screen if webhook is processing
+  if (showThinkingScreen) {
+    return <ThinkingScreen onComplete={handleThinkingComplete} duration={30000} />;
+  }
 
   return (
     <BackgroundLines>

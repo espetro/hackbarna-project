@@ -168,17 +168,6 @@ export function FavoritesSelection({ attractions, onComplete }: FavoritesSelecti
           })}
         </div>
 
-        {/* Helper text when nothing selected */}
-        {selectedIds.length === 0 && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-center text-gray-500 dark:text-gray-400 text-sm mt-8"
-          >
-            Select one or more activities to continue
-          </motion.p>
-        )}
 
         {/* Centered Floating Action Buttons - Fixed to viewport */}
         <AnimatePresence>
@@ -214,7 +203,7 @@ export function FavoritesSelection({ attractions, onComplete }: FavoritesSelecti
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.2 }}
                   >
-                    {selectedIds.length} {selectedIds.length === 1 ? 'activity' : 'activities'} selected
+                    {selectedIds.length} {selectedIds.length === 1 ? 'movie' : 'movies'} selected
                   </motion.span>
                 </motion.div>
 

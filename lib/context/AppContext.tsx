@@ -1,9 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { Recommendation, ItineraryEvent } from '../types';
 // Import Firebase functions 
 import { getSuggestedActivities } from '../firebase/db';
+// Import smart suggestions utilities
+import { generateSmartSuggestions, SmartSuggestion } from '../smartSuggestions';
 
 // Firebase enabled for suggested activities, localStorage fallback for user data
 const saveFavorites = async (attractions: any[], userId?: string) => {
@@ -131,6 +133,12 @@ interface AppContextType {
   // Suggested activities from Firebase
   loadSuggestedActivities: () => Promise<void>;
   suggestedActivitiesLoading: boolean;
+  // Smart suggestions for empty slots
+  smartSuggestions: SmartSuggestion[];
+  addSmartSuggestion: (suggestion: SmartSuggestion) => void;
+  // Current webhook session ID
+  currentSessionId: string | null;
+  setCurrentSessionId: (sessionId: string | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -143,6 +151,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [itineraryEvents, setItineraryEvents] = useState<ItineraryEvent[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [suggestedActivitiesLoading, setSuggestedActivitiesLoading] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -187,8 +196,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Load itinerary
         const events = await getItineraryEvents();
         if (events && events.length > 0) {
-          setItineraryEvents(events);
-          console.log('📅 Loaded', events.length, 'events from localStorage');
+          // Deduplicate on load to clean up any existing duplicates
+          const dedupedEvents = events.filter((event, index, arr) => 
+            arr.findIndex(e => e.id === event.id) === index
+          );
+          
+          if (dedupedEvents.length !== events.length) {
+            console.warn('🧹 Cleaned up', events.length - dedupedEvents.length, 'duplicate events on load');
+          }
+          
+          setItineraryEvents(dedupedEvents);
+          console.log('📅 Loaded', dedupedEvents.length, 'events from localStorage');
         }
 
         setIsLoaded(true);
@@ -239,24 +257,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addItineraryEvent = useCallback((event: ItineraryEvent) => {
     console.log('📅 Adding to itinerary:', event.title);
     setItineraryEvents((prev) => {
-      // Check if event already exists
-      const exists = prev.some(e => e.id === event.id);
-      if (exists) {
-        console.log('⚠️ Event already exists in itinerary');
+      // Check if event already exists (by ID or by recommendationId to prevent duplicates)
+      const existsById = prev.some(e => e.id === event.id);
+      const existsByRecommendation = event.recommendationId && prev.some(e => 
+        e.recommendationId === event.recommendationId && 
+        e.source === event.source
+      );
+      
+      if (existsById) {
+        console.log('⚠️ Event already exists in itinerary (duplicate ID)');
+        return prev;
+      }
+      
+      if (existsByRecommendation) {
+        console.log('⚠️ Recommendation already in itinerary (duplicate activity)');
         return prev;
       }
 
       // Add and sort by startTime
       const updated = [...prev, event];
       const sorted = updated.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-      console.log('✅ Itinerary updated. Total events:', sorted.length);
+      
+      // Final safety check: Remove any duplicates that might have slipped through
+      const deduped = sorted.filter((event, index, arr) => 
+        arr.findIndex(e => e.id === event.id) === index
+      );
+      
+      if (deduped.length !== sorted.length) {
+        console.warn('🧹 Removed', sorted.length - deduped.length, 'duplicate events during add');
+      }
+      
+      console.log('✅ Itinerary updated. Total events:', deduped.length);
 
       // Persist to localStorage
       if (isLoaded) {
         addItineraryEventToDb(event).catch(err => console.error('Failed to save event:', err));
       }
 
-      return sorted;
+      return deduped;
     });
   }, [isLoaded]);
 
@@ -326,6 +364,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return filtered;
   }, [recommendations, recommendationsInItinerary]);
 
+  // Helper function to filter recommendations by session ID
+  const getRecommendationsBySession = useCallback((sessionId: string) => {
+    const filtered = recommendations.filter(rec => rec.sessionId === sessionId);
+    console.log('🔍 Filtered', filtered.length, 'recommendations for session:', sessionId);
+    return filtered;
+  }, [recommendations]);
+
+  // Generate smart suggestions for empty slots in the itinerary
+  const smartSuggestions = React.useMemo(() => {
+    if (itineraryEvents.length < 2 || availableRecommendations.length === 0) {
+      return [];
+    }
+    
+    const suggestions = generateSmartSuggestions(itineraryEvents, availableRecommendations);
+    console.log('🧠 Generated smart suggestions:', suggestions.length, 'for', itineraryEvents.length, 'events');
+    return suggestions;
+  }, [itineraryEvents, availableRecommendations]);
+
+  // Add a smart suggestion to the itinerary
+  const addSmartSuggestion = useCallback((suggestion: SmartSuggestion) => {
+    console.log('🧠 Adding smart suggestion to itinerary:', suggestion.activity.title);
+    
+    // Generate a truly unique ID with random component to avoid collisions
+    const uniqueId = `smart-${suggestion.activity.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    const itineraryEvent: ItineraryEvent = {
+      id: uniqueId,
+      title: suggestion.activity.title,
+      description: suggestion.activity.description,
+      location: {
+        name: suggestion.activity.title,
+        lat: suggestion.activity.location.lat,
+        lng: suggestion.activity.location.lng,
+      },
+      startTime: suggestion.suggestedStartTime,
+      endTime: suggestion.suggestedEndTime,
+      source: 'recommendation',
+      recommendationId: suggestion.activity.id,
+      image: suggestion.activity.image,
+    };
+    
+    addItineraryEvent(itineraryEvent);
+  }, [addItineraryEvent]);
+
   // Load suggested activities from Firebase
   const loadSuggestedActivities = useCallback(async () => {
     setSuggestedActivitiesLoading(true);
@@ -365,6 +447,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         availableRecommendations,
         loadSuggestedActivities,
         suggestedActivitiesLoading,
+        smartSuggestions,
+        addSmartSuggestion,
+        currentSessionId,
+        setCurrentSessionId,
       }}
     >
       {children}

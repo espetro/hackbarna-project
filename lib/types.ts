@@ -11,7 +11,11 @@ export interface Recommendation {
   };
   duration?: string;
   price?: string;
+  sessionId?: string; // Webhook session ID for filtering
 }
+
+// Re-export SmartSuggestion from smartSuggestions for convenience
+export type { SmartSuggestion, TimeSlot } from './smartSuggestions';
 
 export interface UserQuery {
   text: string;

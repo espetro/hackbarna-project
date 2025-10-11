@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { ItineraryEvent, Recommendation } from '@/lib/types';
+import { ItineraryEvent, Recommendation, SmartSuggestion } from '@/lib/types';
 import Image from 'next/image';
 import {
   calculateDistance,
@@ -12,6 +12,7 @@ import {
   getTravelMode,
   calculateGapBetweenEvents,
 } from '@/lib/itineraryUtils';
+import SmartSuggestionsPanel from './SmartSuggestionsPanel';
 
 interface ItineraryPanelProps {
   isOpen: boolean;
@@ -20,8 +21,13 @@ interface ItineraryPanelProps {
   onRemoveEvent: (eventId: string) => void;
   onEventClick: (event: ItineraryEvent) => void;
   onImportCalendar: () => void;
+  onResetItinerary?: () => void;
   recommendations?: Recommendation[];
   onAddRecommendation?: (rec: Recommendation) => void;
+  // Smart suggestions
+  smartSuggestions?: SmartSuggestion[];
+  onAddSmartSuggestion?: (suggestion: SmartSuggestion) => void;
+  onExpandSmartSuggestion?: (suggestion: SmartSuggestion) => void;
 }
 
 export default function ItineraryPanel({
@@ -31,8 +37,12 @@ export default function ItineraryPanel({
   onRemoveEvent,
   onEventClick,
   onImportCalendar,
+  onResetItinerary,
   recommendations = [],
   onAddRecommendation,
+  smartSuggestions = [],
+  onAddSmartSuggestion,
+  onExpandSmartSuggestion,
 }: ItineraryPanelProps) {
   const [expandedEventIds, setExpandedEventIds] = React.useState<Set<string>>(new Set());
   const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
@@ -267,6 +277,21 @@ export default function ItineraryPanel({
                         )}
                       </button>
                     )}
+                    
+                    {/* Reset Itinerary Button - Only show when itinerary has events */}
+                    {events.length > 0 && onResetItinerary && (
+                      <button
+                        onClick={onResetItinerary}
+                        className="p-2 rounded-full transition-all bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/40"
+                        aria-label="Reset itinerary"
+                        title="Clear all activities and go back to preferences"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </button>
+                    )}
+
                     <button
                       onClick={onClose}
                       className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -561,6 +586,18 @@ export default function ItineraryPanel({
                       </div>
                     )}
                   </div>
+
+                  {/* Smart Suggestions Panel - Show if there are events and smart suggestions */}
+                  {events.length >= 2 && smartSuggestions.length > 0 && onAddSmartSuggestion && onExpandSmartSuggestion && (
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                      <SmartSuggestionsPanel
+                        smartSuggestions={smartSuggestions}
+                        itineraryEvents={events}
+                        onAddSuggestion={onAddSmartSuggestion}
+                        onExpandSuggestion={onExpandSmartSuggestion}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
