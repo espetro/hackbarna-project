@@ -67,13 +67,54 @@ export interface TimeGap {
   durationMinutes: number;
 }
 
+export interface TimeGapOptions {
+  minGapMinutes?: number;
+  dayStartHour?: number;
+  dayEndHour?: number;
+  bufferTimeMinutes?: number;
+}
+
+export function detectTimeGaps(
+  items: ItineraryItem[],
+  date: Date,
+  options: TimeGapOptions = {}
+): TimeGap[];
+
 export function detectTimeGaps(
   items: ItineraryItem[],
   date: Date,
   minGapMinutes: number = 30,
   dayStartHour: number = 8,
   dayEndHour: number = 22
+): TimeGap[];
+
+export function detectTimeGaps(
+  items: ItineraryItem[],
+  date: Date,
+  optionsOrMinGap: TimeGapOptions | number = 30,
+  dayStartHour: number = 8,
+  dayEndHour: number = 22
 ): TimeGap[] {
+  // Handle both old and new function signatures
+  let options: Required<TimeGapOptions>;
+  
+  if (typeof optionsOrMinGap === 'number') {
+    // Legacy signature
+    options = {
+      minGapMinutes: optionsOrMinGap,
+      dayStartHour,
+      dayEndHour,
+      bufferTimeMinutes: 0,
+    };
+  } else {
+    // New options-based signature
+    options = {
+      minGapMinutes: optionsOrMinGap.minGapMinutes ?? 30,
+      dayStartHour: optionsOrMinGap.dayStartHour ?? 8,
+      dayEndHour: optionsOrMinGap.dayEndHour ?? 22,
+      bufferTimeMinutes: optionsOrMinGap.bufferTimeMinutes ?? 0,
+    };
+  }
   const gaps: TimeGap[] = [];
 
   // Filter items for the specific date and sort by start time
@@ -91,30 +132,38 @@ export function detectTimeGaps(
   if (dayItems.length === 0) {
     // Entire day is free
     const dayStart = new Date(date);
-    dayStart.setHours(dayStartHour, 0, 0, 0);
+    dayStart.setHours(options.dayStartHour, 0, 0, 0);
     const dayEnd = new Date(date);
-    dayEnd.setHours(dayEndHour, 0, 0, 0);
+    dayEnd.setHours(options.dayEndHour, 0, 0, 0);
 
-    return [{
-      start: dayStart,
-      end: dayEnd,
-      durationMinutes: (dayEnd.getTime() - dayStart.getTime()) / 60000,
-    }];
+    const totalMinutes = (dayEnd.getTime() - dayStart.getTime()) / 60000;
+    if (totalMinutes >= options.minGapMinutes) {
+      return [{
+        start: dayStart,
+        end: dayEnd,
+        durationMinutes: totalMinutes,
+      }];
+    }
+    return [];
   }
 
   const dayStart = new Date(date);
-  dayStart.setHours(dayStartHour, 0, 0, 0);
+  dayStart.setHours(options.dayStartHour, 0, 0, 0);
   const dayEnd = new Date(date);
-  dayEnd.setHours(dayEndHour, 0, 0, 0);
+  dayEnd.setHours(options.dayEndHour, 0, 0, 0);
 
   // Gap before first event
   const firstEventStart = new Date(dayItems[0].startTime);
-  if (firstEventStart > dayStart) {
-    const gapMinutes = (firstEventStart.getTime() - dayStart.getTime()) / 60000;
-    if (gapMinutes >= minGapMinutes) {
+  // Apply buffer time - reduce gap start by buffer to account for travel time
+  const adjustedGapStart = new Date(dayStart.getTime() + options.bufferTimeMinutes * 60000);
+  const adjustedFirstEventStart = new Date(firstEventStart.getTime() - options.bufferTimeMinutes * 60000);
+  
+  if (adjustedFirstEventStart > adjustedGapStart) {
+    const gapMinutes = (adjustedFirstEventStart.getTime() - adjustedGapStart.getTime()) / 60000;
+    if (gapMinutes >= options.minGapMinutes) {
       gaps.push({
-        start: dayStart,
-        end: firstEventStart,
+        start: adjustedGapStart,
+        end: adjustedFirstEventStart,
         durationMinutes: gapMinutes,
       });
     }
@@ -124,12 +173,17 @@ export function detectTimeGaps(
   for (let i = 0; i < dayItems.length - 1; i++) {
     const currentEnd = new Date(dayItems[i].endTime);
     const nextStart = new Date(dayItems[i + 1].startTime);
-    const gapMinutes = (nextStart.getTime() - currentEnd.getTime()) / 60000;
+    
+    // Apply buffer time - add buffer after current event, subtract buffer before next event
+    const adjustedCurrentEnd = new Date(currentEnd.getTime() + options.bufferTimeMinutes * 60000);
+    const adjustedNextStart = new Date(nextStart.getTime() - options.bufferTimeMinutes * 60000);
+    
+    const gapMinutes = (adjustedNextStart.getTime() - adjustedCurrentEnd.getTime()) / 60000;
 
-    if (gapMinutes >= minGapMinutes) {
+    if (gapMinutes >= options.minGapMinutes) {
       gaps.push({
-        start: currentEnd,
-        end: nextStart,
+        start: adjustedCurrentEnd,
+        end: adjustedNextStart,
         durationMinutes: gapMinutes,
       });
     }
@@ -137,12 +191,16 @@ export function detectTimeGaps(
 
   // Gap after last event
   const lastEventEnd = new Date(dayItems[dayItems.length - 1].endTime);
-  if (lastEventEnd < dayEnd) {
-    const gapMinutes = (dayEnd.getTime() - lastEventEnd.getTime()) / 60000;
-    if (gapMinutes >= minGapMinutes) {
+  // Apply buffer time - add buffer after last event
+  const adjustedLastEventEnd = new Date(lastEventEnd.getTime() + options.bufferTimeMinutes * 60000);
+  const adjustedDayEnd = new Date(dayEnd.getTime() - options.bufferTimeMinutes * 60000);
+  
+  if (adjustedLastEventEnd < adjustedDayEnd) {
+    const gapMinutes = (adjustedDayEnd.getTime() - adjustedLastEventEnd.getTime()) / 60000;
+    if (gapMinutes >= options.minGapMinutes) {
       gaps.push({
-        start: lastEventEnd,
-        end: dayEnd,
+        start: adjustedLastEventEnd,
+        end: adjustedDayEnd,
         durationMinutes: gapMinutes,
       });
     }

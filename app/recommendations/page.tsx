@@ -61,7 +61,7 @@ export default function RecommendationsPage() {
   // };
 
   // Add recommendation to itinerary
-  const handleAddToItinerary = (rec: Recommendation) => {
+  const handleAddToItinerary = async (rec: Recommendation) => {
     // Create a time slot - default to next available hour
     const now = new Date();
     const startTime = new Date(now);
@@ -95,8 +95,55 @@ export default function RecommendationsPage() {
       image: rec.image,
     };
 
+    // Add the main itinerary event
     addItineraryEvent(itineraryEvent);
-    
+
+    // Run gap-filling integration asynchronously
+    try {
+      // Detect gaps for the date of the added event
+      const eventDate = new Date(itineraryEvent.startTime);
+      eventDate.setHours(0, 0, 0, 0);
+
+      // Get gap-filling suggestions for the date
+      const gapSuggestionsMap = findGapSuggestions(eventDate);
+
+      // Flatten suggestions and filter out activities already in itinerary
+      const allSuggestions = Array.from(gapSuggestionsMap.values())
+        .flatMap(result => result.suggestions)
+        .filter(suggestion => !recommendationsInItinerary.has(suggestion.activity.id));
+
+      // Add gap-filling activities to itinerary, respecting max suggestions per gap
+      for (const suggestion of allSuggestions) {
+        const gapActivity = suggestion.activity;
+
+        // Create itinerary event for gap-filling activity
+        const gapStartTime = suggestion.gap.start;
+        const gapDurationMinutes = parseInt(gapActivity.duration?.match(/\d+/)?.[0] || '120');
+        const gapEndTime = new Date(gapStartTime.getTime() + gapDurationMinutes * 60000);
+
+        const gapEvent: ItineraryEvent = {
+          id: `gapfill-${gapActivity.id}-${Date.now()}`,
+          title: gapActivity.title,
+          description: gapActivity.description,
+          location: {
+            name: gapActivity.title,
+            lat: gapActivity.location.lat,
+            lng: gapActivity.location.lng,
+          },
+          startTime: gapStartTime,
+          endTime: gapEndTime,
+          source: 'recommendation',
+          recommendationId: gapActivity.id,
+          image: gapActivity.image,
+        };
+
+        // Add gap-filling event to itinerary
+        addItineraryEvent(gapEvent);
+      }
+    } catch (error) {
+      console.error('Error during gap-filling integration:', error);
+    }
+
     // Show success feedback with enhanced animation
     setToastMessage(rec.title);
     setShowToast(true);

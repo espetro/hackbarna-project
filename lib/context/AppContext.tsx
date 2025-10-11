@@ -2,8 +2,17 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Recommendation, ItineraryEvent } from '../types';
-// Import Firebase functions 
+// Import Firebase functions
 import { getSuggestedActivities } from '../firebase/db';
+// Import gap-filling algorithm
+import {
+  findOptimalActivitiesForGaps,
+  GapFillingResult,
+  GapSuggestion,
+  DEFAULT_GAP_FILLING_OPTIONS,
+  GapFillingOptions
+} from '../gapFillingAlgorithm';
+import { detectTimeGaps, TimeGap } from '../../src/contracts/itinerary';
 
 // Firebase enabled for suggested activities, localStorage fallback for user data
 const saveFavorites = async (attractions: any[], userId?: string) => {
@@ -131,6 +140,11 @@ interface AppContextType {
   // Suggested activities from Firebase
   loadSuggestedActivities: () => Promise<void>;
   suggestedActivitiesLoading: boolean;
+  // Gap-filling functionality
+  findGapSuggestions: (date: Date, options?: Partial<GapFillingOptions>) => Map<string, GapFillingResult>;
+  getTimeGapsForDate: (date: Date, options?: Partial<GapFillingOptions>) => TimeGap[];
+  gapFillingOptions: GapFillingOptions;
+  setGapFillingOptions: (options: Partial<GapFillingOptions>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -143,6 +157,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [itineraryEvents, setItineraryEvents] = useState<ItineraryEvent[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [suggestedActivitiesLoading, setSuggestedActivitiesLoading] = useState(false);
+  const [gapFillingOptions, setGapFillingOptionsState] = useState<GapFillingOptions>(DEFAULT_GAP_FILLING_OPTIONS);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -345,6 +360,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Gap-filling functions
+  const setGapFillingOptions = useCallback((newOptions: Partial<GapFillingOptions>) => {
+    setGapFillingOptionsState(prev => ({ ...prev, ...newOptions }));
+    console.log('⚙️ Gap-filling options updated:', newOptions);
+  }, []);
+
+  const getTimeGapsForDate = useCallback((date: Date, options?: Partial<GapFillingOptions>) => {
+    const mergedOptions = { ...gapFillingOptions, ...options };
+    
+    // Convert ItineraryEvent to ItineraryItem format for detectTimeGaps
+    const itineraryItems = itineraryEvents.map(event => ({
+      id: event.id,
+      title: event.title,
+      description: event.description || '',
+      location: event.location,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      source: event.source,
+      recommendationId: event.recommendationId?.toString(),
+      image: event.image,
+      isLocked: event.source === 'google_calendar',
+      createdAt: new Date(),
+    }));
+
+    const gaps = detectTimeGaps(itineraryItems, date, {
+      minGapMinutes: mergedOptions.minGapMinutes,
+      dayStartHour: 8,
+      dayEndHour: 22,
+      bufferTimeMinutes: mergedOptions.bufferTimeMinutes,
+    });
+
+    console.log('🔍 Found', gaps.length, 'time gaps for', date.toDateString());
+    return gaps;
+  }, [itineraryEvents, gapFillingOptions]);
+
+  const findGapSuggestions = useCallback((date: Date, options?: Partial<GapFillingOptions>) => {
+    const mergedOptions = { ...gapFillingOptions, ...options };
+    const gaps = getTimeGapsForDate(date, options);
+    
+    if (gaps.length === 0) {
+      console.log('📅 No gaps found for gap-filling on', date.toDateString());
+      return new Map<string, GapFillingResult>();
+    }
+
+    console.log('🧠 Running gap-filling algorithm for', gaps.length, 'gaps...');
+    const results = findOptimalActivitiesForGaps(
+      gaps,
+      availableRecommendations,
+      itineraryEvents,
+      mergedOptions
+    );
+
+    console.log('✅ Gap-filling analysis complete:', results.size, 'results generated');
+    return results;
+  }, [itineraryEvents, availableRecommendations, gapFillingOptions, getTimeGapsForDate]);
+
   return (
     <AppContext.Provider
       value={{
@@ -365,6 +436,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         availableRecommendations,
         loadSuggestedActivities,
         suggestedActivitiesLoading,
+        // Gap-filling functionality
+        findGapSuggestions,
+        getTimeGapsForDate,
+        gapFillingOptions,
+        setGapFillingOptions,
       }}
     >
       {children}

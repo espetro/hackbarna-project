@@ -12,6 +12,8 @@ import {
   getTravelMode,
   calculateGapBetweenEvents,
 } from '@/lib/itineraryUtils';
+import { useAppContext } from '@/lib/context/AppContext';
+import { GapSuggestion, GapFillingResult } from '@/lib/gapFillingAlgorithm';
 
 interface ItineraryPanelProps {
   isOpen: boolean;
@@ -37,6 +39,12 @@ export default function ItineraryPanel({
   const [expandedEventIds, setExpandedEventIds] = React.useState<Set<string>>(new Set());
   const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
   const [carouselIndices, setCarouselIndices] = React.useState<Record<string, number>>({});
+  const [gapSuggestions, setGapSuggestions] = React.useState<Map<string, GapFillingResult>>(new Map());
+  const [isLoadingGapSuggestions, setIsLoadingGapSuggestions] = React.useState(false);
+  const [showIntelligentSuggestions, setShowIntelligentSuggestions] = React.useState(false);
+  
+  // Get gap-filling functions from context
+  const { findGapSuggestions, getTimeGapsForDate } = useAppContext();
   
   // Check if calendar has been synced (has events from google_calendar source)
   const hasCalendarEvents = React.useMemo(() => {
@@ -200,6 +208,77 @@ export default function ItineraryPanel({
 
   const gaps = detectGaps();
 
+  // Handle intelligent gap filling
+  const handleFillGaps = React.useCallback(async () => {
+    setIsLoadingGapSuggestions(true);
+    try {
+      console.log('🧠 Finding intelligent gap suggestions for', selectedDate.toDateString());
+      const suggestions = findGapSuggestions(selectedDate);
+      setGapSuggestions(suggestions);
+      setShowIntelligentSuggestions(true);
+      console.log('✅ Found suggestions for', suggestions.size, 'gaps');
+    } catch (error) {
+      console.error('❌ Error finding gap suggestions:', error);
+    } finally {
+      setIsLoadingGapSuggestions(false);
+    }
+  }, [selectedDate, findGapSuggestions]);
+
+  // Handle adding intelligent suggestion to itinerary
+  const handleAddIntelligentSuggestion = React.useCallback((suggestion: GapSuggestion) => {
+    if (!onAddRecommendation) return;
+
+    console.log('➕ Adding intelligent suggestion:', suggestion.activity.title);
+    onAddRecommendation(suggestion.activity);
+    
+    // Remove this gap from suggestions since it will be filled
+    setGapSuggestions(prev => {
+      const updated = new Map(prev);
+      updated.delete(suggestion.gap.id);
+      return updated;
+    });
+  }, [onAddRecommendation]);
+
+  // Render confidence indicator
+  const renderConfidenceIndicator = (confidence: number) => {
+    const stars = Math.round(confidence * 3);
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3].map(i => (
+          <svg
+            key={i}
+            className={`w-3 h-3 ${i <= stars ? 'text-yellow-400' : 'text-gray-300'}`}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+      </div>
+    );
+  };
+
+  // Render distance indicator
+  const renderDistanceIndicator = (distanceKm: number) => {
+    const travelMode = distanceKm < 2 ? 'walking' : 'transit';
+    const travelTime = distanceKm < 2 ? Math.round(distanceKm / 4 * 60) : Math.round(distanceKm / 20 * 60);
+    
+    return (
+      <div className="flex items-center gap-1 text-xs text-gray-500">
+        {travelMode === 'walking' ? (
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        ) : (
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+          </svg>
+        )}
+        <span>{travelTime}min</span>
+      </div>
+    );
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -241,6 +320,28 @@ export default function ItineraryPanel({
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Fill Gaps Button - Show when there are events and gaps */}
+                    {dayEvents.length > 0 && gaps.length > 0 && (
+                      <button
+                        onClick={handleFillGaps}
+                        disabled={isLoadingGapSuggestions}
+                        className="p-2 rounded-full transition-all flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-800/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Fill gaps with intelligent suggestions"
+                        title="Fill gaps with intelligent suggestions"
+                      >
+                        {isLoadingGapSuggestions ? (
+                          <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                    
                     {/* Google Calendar Sync Button - Only show when itinerary has events */}
                     {events.length > 0 && (
                       <button
@@ -362,8 +463,8 @@ export default function ItineraryPanel({
 
                       return (
                         <React.Fragment key={event.id}>
-                          {/* Gap Block with Recommendations */}
-                          {gapBefore && recommendations.length > 0 && onAddRecommendation && (
+                          {/* Gap Block with Intelligent or Regular Recommendations */}
+                          {gapBefore && onAddRecommendation && (
                             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 my-3">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
@@ -371,45 +472,110 @@ export default function ItineraryPanel({
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                   </svg>
                                   <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                                    Add activity here
+                                    {showIntelligentSuggestions ? 'Smart suggestions' : 'Add activity here'}
                                   </span>
+                                  {showIntelligentSuggestions && (
+                                    <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                  )}
                                 </div>
                                 <span className="text-xs text-blue-600 dark:text-blue-400">
                                   {Math.floor(gapBefore.durationMinutes / 60)}h {Math.floor(gapBefore.durationMinutes % 60)}m free
                                 </span>
                               </div>
 
-                              {/* Recommendation Carousel */}
-                              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                                {recommendations.slice(0, 5).map((rec) => (
-                                  <div
-                                    key={rec.id}
-                                    className="flex-shrink-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
-                                    onClick={() => onAddRecommendation(rec)}
-                                  >
-                                    {rec.image && (
-                                      <div className="relative h-24 w-full">
-                                        <Image
-                                          src={rec.image}
-                                          alt={rec.title}
-                                          fill
-                                          className="object-cover"
-                                          sizes="200px"
-                                        />
-                                      </div>
-                                    )}
-                                    <div className="p-3">
-                                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1 mb-1">
-                                        {rec.title}
-                                      </h4>
-                                      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                                        <span>{rec.duration}</span>
-                                        <span>{rec.price}</span>
-                                      </div>
+                              {/* Show intelligent suggestions if available, otherwise show regular recommendations */}
+                              {(() => {
+                                const gapId = `gap-${index}-${event.startTime.getTime()}`;
+                                const intelligentSuggestions = gapSuggestions.get(gapId);
+                                
+                                if (showIntelligentSuggestions && intelligentSuggestions?.suggestions.length) {
+                                  return (
+                                    <div className="space-y-3">
+                                      {intelligentSuggestions.suggestions.map((suggestion, idx) => (
+                                        <div
+                                          key={`${suggestion.activity.id}-${idx}`}
+                                          className="flex-shrink-0 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-purple-200 dark:border-purple-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                                          onClick={() => handleAddIntelligentSuggestion(suggestion)}
+                                        >
+                                          <div className="flex">
+                                            {suggestion.activity.image && (
+                                              <div className="relative h-20 w-20 flex-shrink-0">
+                                                <Image
+                                                  src={suggestion.activity.image}
+                                                  alt={suggestion.activity.title}
+                                                  fill
+                                                  className="object-cover"
+                                                  sizes="80px"
+                                                />
+                                              </div>
+                                            )}
+                                            <div className="flex-1 p-3">
+                                              <div className="flex items-start justify-between mb-2">
+                                                <h4 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
+                                                  {suggestion.activity.title}
+                                                </h4>
+                                                {renderConfidenceIndicator(suggestion.confidence)}
+                                              </div>
+                                              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                                <span>{suggestion.activity.duration}</span>
+                                                <span>{suggestion.activity.price}</span>
+                                              </div>
+                                              <div className="flex items-center justify-between">
+                                                <div className="text-xs text-purple-600 dark:text-purple-400">
+                                                  {Math.round(suggestion.timeUtilization * 100)}% time usage
+                                                </div>
+                                                {renderDistanceIndicator(Math.min(suggestion.distanceToNext || Infinity, suggestion.distanceToPrevious || Infinity))}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
                                     </div>
-                                  </div>
-                                ))}
-                              </div>
+                                  );
+                                } else if (recommendations.length > 0) {
+                                  // Fallback to regular recommendations
+                                  return (
+                                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                                      {recommendations.slice(0, 5).map((rec) => (
+                                        <div
+                                          key={rec.id}
+                                          className="flex-shrink-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                                          onClick={() => onAddRecommendation(rec)}
+                                        >
+                                          {rec.image && (
+                                            <div className="relative h-24 w-full">
+                                              <Image
+                                                src={rec.image}
+                                                alt={rec.title}
+                                                fill
+                                                className="object-cover"
+                                                sizes="200px"
+                                              />
+                                            </div>
+                                          )}
+                                          <div className="p-3">
+                                            <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1 mb-1">
+                                              {rec.title}
+                                            </h4>
+                                            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                                              <span>{rec.duration}</span>
+                                              <span>{rec.price}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-4">
+                                      No activities available for this time slot
+                                    </div>
+                                  );
+                                }
+                              })()}
                             </div>
                           )}
 
@@ -512,7 +678,7 @@ export default function ItineraryPanel({
                     })}
 
                     {/* Final gap after all events */}
-                    {gaps.length > 0 && gaps[gaps.length - 1].endHour >= dayEvents[dayEvents.length - 1]?.endTime.getHours() && recommendations.length > 0 && onAddRecommendation && (
+                    {gaps.length > 0 && onAddRecommendation && (
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 mt-3">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
@@ -520,44 +686,110 @@ export default function ItineraryPanel({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                             <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                              Add activity here
+                              {showIntelligentSuggestions ? 'Smart suggestions' : 'Add activity here'}
                             </span>
+                            {showIntelligentSuggestions && (
+                              <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                              </svg>
+                            )}
                           </div>
                           <span className="text-xs text-blue-600 dark:text-blue-400">
-                            Evening slot
+                            {Math.floor(gaps[gaps.length - 1].durationMinutes / 60)}h {Math.floor(gaps[gaps.length - 1].durationMinutes % 60)}m free
                           </span>
                         </div>
 
-                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                          {recommendations.slice(0, 5).map((rec) => (
-                            <div
-                              key={rec.id}
-                              className="flex-shrink-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
-                              onClick={() => onAddRecommendation(rec)}
-                            >
-                              {rec.image && (
-                                <div className="relative h-24 w-full">
-                                  <Image
-                                    src={rec.image}
-                                    alt={rec.title}
-                                    fill
-                                    className="object-cover"
-                                    sizes="200px"
-                                  />
-                                </div>
-                              )}
-                              <div className="p-3">
-                                <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1 mb-1">
-                                  {rec.title}
-                                </h4>
-                                <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                                  <span>{rec.duration}</span>
-                                  <span>{rec.price}</span>
-                                </div>
+                        {(() => {
+                          const lastGap = gaps[gaps.length - 1];
+                          const gapId = `gap-${dayEvents.length}-${lastGap.startHour}-${lastGap.startMinute}`;
+                          const intelligentSuggestions = gapSuggestions.get(gapId);
+
+                          if (showIntelligentSuggestions && intelligentSuggestions?.suggestions.length) {
+                            return (
+                              <div className="space-y-3">
+                                {intelligentSuggestions.suggestions.map((suggestion, idx) => (
+                                  <div
+                                    key={`${suggestion.activity.id}-${idx}`}
+                                    className="flex-shrink-0 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-purple-200 dark:border-purple-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                                    onClick={() => handleAddIntelligentSuggestion(suggestion)}
+                                  >
+                                    <div className="flex">
+                                      {suggestion.activity.image && (
+                                        <div className="relative h-20 w-20 flex-shrink-0">
+                                          <Image
+                                            src={suggestion.activity.image}
+                                            alt={suggestion.activity.title}
+                                            fill
+                                            className="object-cover"
+                                            sizes="80px"
+                                          />
+                                        </div>
+                                      )}
+                                      <div className="flex-1 p-3">
+                                        <div className="flex items-start justify-between mb-2">
+                                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">
+                                            {suggestion.activity.title}
+                                          </h4>
+                                          {renderConfidenceIndicator(suggestion.confidence)}
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                          <span>{suggestion.activity.duration}</span>
+                                          <span>{suggestion.activity.price}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                          <div className="text-xs text-purple-600 dark:text-purple-400">
+                                            {Math.round(suggestion.timeUtilization * 100)}% time usage
+                                          </div>
+                                          {renderDistanceIndicator(Math.min(suggestion.distanceToNext || Infinity, suggestion.distanceToPrevious || Infinity))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            );
+                          } else if (recommendations.length > 0) {
+                            // Fallback to regular recommendations
+                            return (
+                              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                                {recommendations.slice(0, 5).map((rec) => (
+                                  <div
+                                    key={rec.id}
+                                    className="flex-shrink-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+                                    onClick={() => onAddRecommendation(rec)}
+                                  >
+                                    {rec.image && (
+                                      <div className="relative h-24 w-full">
+                                        <Image
+                                          src={rec.image}
+                                          alt={rec.title}
+                                          fill
+                                          className="object-cover"
+                                          sizes="200px"
+                                        />
+                                      </div>
+                                    )}
+                                    <div className="p-3">
+                                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1 mb-1">
+                                        {rec.title}
+                                      </h4>
+                                      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                                        <span>{rec.duration}</span>
+                                        <span>{rec.price}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-4">
+                                No activities available for this time slot
+                              </div>
+                            );
+                          }
+                        })()}
                       </div>
                     )}
                   </div>
