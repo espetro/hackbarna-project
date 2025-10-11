@@ -11,6 +11,7 @@ interface ItineraryPanelProps {
   events: ItineraryEvent[];
   onRemoveEvent: (eventId: string) => void;
   onEventClick: (event: ItineraryEvent) => void;
+  onImportCalendar: () => void;
 }
 
 export default function ItineraryPanel({
@@ -19,6 +20,7 @@ export default function ItineraryPanel({
   events,
   onRemoveEvent,
   onEventClick,
+  onImportCalendar,
 }: ItineraryPanelProps) {
   
   const formatTime = (date: Date) => {
@@ -134,9 +136,20 @@ export default function ItineraryPanel({
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     No events yet
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
                     Import from Google Calendar or add recommendations to start building your itinerary
                   </p>
+                  
+                  {/* Import Google Calendar Button - Centered */}
+                  <button
+                    onClick={onImportCalendar}
+                    className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
+                  >
+                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/>
+                    </svg>
+                    <span>Import Google Calendar</span>
+                  </button>
                 </div>
               ) : (
                 <div className="px-6 py-4 space-y-6">

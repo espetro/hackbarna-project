@@ -159,10 +159,9 @@ export default function RecommendationsPage() {
         onAddToItinerary={handleAddToItinerary}
       />
 
-      {/* Itinerary Menu - Floating Action Button */}
+      {/* Itinerary Button - Top Left */}
       <ItineraryMenu
         onOpenItinerary={() => setIsItineraryOpen(true)}
-        onImportCalendar={handleImportCalendar}
         eventCount={itineraryEvents.length}
       />
 
@@ -176,6 +175,7 @@ export default function RecommendationsPage() {
           // Could expand event details here
           console.log('Event clicked:', event);
         }}
+        onImportCalendar={handleImportCalendar}
       />
 
       {/* Expanded Detail Card - Bottom Sheet */}
