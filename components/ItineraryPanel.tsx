@@ -362,6 +362,7 @@ export default function ItineraryPanel({
                 </div>
               )}
             </div>
+            </div>
           </motion.div>
         </>
       )}
