@@ -289,18 +289,40 @@ export async function getSuggestedActivities(): Promise<Recommendation[]> {
     const activities: Recommendation[] = [];
     snapshot.forEach((doc) => {
       const data = doc.data();
-      activities.push({
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        image: data.image,
-        location: {
+      
+      // Ensure coordinates are valid numbers
+      const lat = typeof data.locationLat === 'string' ? parseFloat(data.locationLat) : data.locationLat;
+      const lng = typeof data.locationLng === 'string' ? parseFloat(data.locationLng) : data.locationLng;
+      
+      // Validate coordinates before adding to activities
+      if (
+        typeof lat === 'number' && 
+        typeof lng === 'number' && 
+        !isNaN(lat) && 
+        !isNaN(lng) &&
+        lat >= -90 && lat <= 90 &&
+        lng >= -180 && lng <= 180
+      ) {
+        activities.push({
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          image: data.image,
+          location: {
+            lat: lat,
+            lng: lng,
+          },
+          duration: data.duration,
+          price: data.price,
+        });
+      } else {
+        console.warn('⚠️ Skipping activity with invalid coordinates:', {
+          id: data.id,
+          title: data.title,
           lat: data.locationLat,
-          lng: data.locationLng,
-        },
-        duration: data.duration,
-        price: data.price,
-      });
+          lng: data.locationLng
+        });
+      }
     });
 
     console.log('📥 Loaded', activities.length, 'suggested activities from Firebase');

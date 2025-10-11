@@ -33,21 +33,74 @@ export default function MapView({
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 
+  // Helper function to validate coordinates
+  const isValidCoordinate = (lat: number, lng: number): boolean => {
+    return (
+      typeof lat === 'number' && 
+      typeof lng === 'number' && 
+      !isNaN(lat) && 
+      !isNaN(lng) && 
+      lat >= -90 && 
+      lat <= 90 && 
+      lng >= -180 && 
+      lng <= 180
+    );
+  };
+
+  // Filter out recommendations with invalid coordinates
+  const validRecommendations = recommendations.filter(rec => 
+    isValidCoordinate(rec.location.lat, rec.location.lng)
+  );
+
+  // Filter out itinerary events with invalid coordinates
+  const validItineraryEvents = itineraryEvents.filter(event => 
+    isValidCoordinate(event.location.lat, event.location.lng)
+  );
+
+  // Log any invalid coordinates for debugging
+  React.useEffect(() => {
+    const invalidRecs = recommendations.filter(rec => 
+      !isValidCoordinate(rec.location.lat, rec.location.lng)
+    );
+    const invalidEvents = itineraryEvents.filter(event => 
+      !isValidCoordinate(event.location.lat, event.location.lng)
+    );
+
+    if (invalidRecs.length > 0) {
+      console.warn('⚠️ Found recommendations with invalid coordinates:', invalidRecs.map(r => ({
+        id: r.id,
+        title: r.title,
+        lat: r.location.lat,
+        lng: r.location.lng
+      })));
+    }
+
+    if (invalidEvents.length > 0) {
+      console.warn('⚠️ Found itinerary events with invalid coordinates:', invalidEvents.map(e => ({
+        id: e.id,
+        title: e.title,
+        lat: e.location.lat,
+        lng: e.location.lng
+      })));
+    }
+  }, [recommendations, itineraryEvents]);
+
   // Auto-zoom to fit all markers when recommendations or itinerary events change
   useEffect(() => {
-    const allLocations = [
-      ...recommendations.map(r => ({ lng: r.location.lng, lat: r.location.lat })),
-      ...itineraryEvents.map(e => ({ lng: e.location.lng, lat: e.location.lat }))
+    // Use only valid coordinates for map bounds
+    const allValidLocations = [
+      ...validRecommendations.map(r => ({ lng: r.location.lng, lat: r.location.lat })),
+      ...validItineraryEvents.map(e => ({ lng: e.location.lng, lat: e.location.lat }))
     ];
 
-    if (allLocations.length > 0 && mapRef.current) {
-      const bounds = allLocations.reduce(
+    if (allValidLocations.length > 0 && mapRef.current) {
+      const bounds = allValidLocations.reduce(
         (bounds, loc) => {
           return bounds.extend([loc.lng, loc.lat]);
         },
         new mapboxgl.LngLatBounds(
-          [allLocations[0].lng, allLocations[0].lat],
-          [allLocations[0].lng, allLocations[0].lat]
+          [allValidLocations[0].lng, allValidLocations[0].lat],
+          [allValidLocations[0].lng, allValidLocations[0].lat]
         )
       );
 
@@ -66,7 +119,7 @@ export default function MapView({
         duration: 1000
       });
     }
-  }, [recommendations, itineraryEvents]);
+  }, [validRecommendations, validItineraryEvents]);
 
   // Itinerary hook - re-render when itinerary changes
   useEffect(() => {
@@ -76,15 +129,16 @@ export default function MapView({
     }
   }, [itineraryEvents]);
 
-  // Create GeoJSON for the itinerary route line (connecting itinerary events in order)
+  // Create GeoJSON for the itinerary route line (connecting valid itinerary events in order)
   const itineraryRouteGeoJSON = {
     type: 'Feature' as const,
     geometry: {
       type: 'LineString' as const,
-      coordinates: itineraryEvents.map(event => [event.location.lng, event.location.lat])
+      coordinates: validItineraryEvents.map(event => [event.location.lng, event.location.lat])
     },
     properties: {}
   };
+
 
   // If no Mapbox token, show error message
   if (!mapboxToken) {
@@ -120,23 +174,23 @@ export default function MapView({
     >
       <NavigationControl position="top-right" />
 
-      {/* Route line connecting itinerary events in order */}
-      {itineraryEvents.length > 1 && (
-        <Source id="itinerary-route" type="geojson" data={itineraryRouteGeoJSON}>
-          <Layer
-            id="itinerary-route-line"
-            type="line"
-            paint={{
-              'line-color': '#3b82f6',
-              'line-width': 4,
-              'line-opacity': 0.8
-            }}
-          />
-        </Source>
-      )}
+          {/* Route line connecting itinerary events in order */}
+          {validItineraryEvents.length > 1 && (
+            <Source id="itinerary-route" type="geojson" data={itineraryRouteGeoJSON}>
+              <Layer
+                id="itinerary-route-line"
+                type="line"
+                paint={{
+                  'line-color': '#3b82f6',
+                  'line-width': 4,
+                  'line-opacity': 0.8
+                }}
+              />
+            </Source>
+          )}
 
-      {/* Grey pin markers for suggested activities (recommendations) - no numbers */}
-      {recommendations.map((rec) => (
+          {/* Grey pin markers for suggested activities (recommendations) - no numbers */}
+          {validRecommendations.map((rec) => (
         <Marker
           key={rec.id}
           longitude={rec.location.lng}
@@ -178,8 +232,8 @@ export default function MapView({
         </Marker>
       ))}
 
-      {/* Numbered markers for itinerary events - connected in order */}
-      {itineraryEvents.map((event, index) => (
+          {/* Numbered markers for itinerary events - connected in order */}
+          {validItineraryEvents.map((event, index) => (
         <Marker
           key={event.id}
           longitude={event.location.lng}
