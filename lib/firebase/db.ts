@@ -290,9 +290,29 @@ export async function getSuggestedActivities(): Promise<Recommendation[]> {
     snapshot.forEach((doc) => {
       const data = doc.data();
       
-      // Ensure coordinates are valid numbers
-      const lat = typeof data.locationLat === 'string' ? parseFloat(data.locationLat) : data.locationLat;
-      const lng = typeof data.locationLng === 'string' ? parseFloat(data.locationLng) : data.locationLng;
+      // Parse coordinates and fix missing decimal points
+      let lat = typeof data.locationLat === 'string' ? parseFloat(data.locationLat) : data.locationLat;
+      let lng = typeof data.locationLng === 'string' ? parseFloat(data.locationLng) : data.locationLng;
+      
+      // Fix coordinates that are missing decimal points (e.g., '488571' should be '48.8571')
+      if (lat && lat > 90) {
+        // If latitude is > 90, it's likely missing a decimal point
+        const latStr = lat.toString();
+        if (latStr.length >= 6) {
+          lat = parseFloat(latStr.slice(0, 2) + '.' + latStr.slice(2));
+        }
+      }
+      
+      if (lng && Math.abs(lng) > 180) {
+        // If longitude is > 180 or < -180, it's likely missing a decimal point
+        const lngStr = lng.toString();
+        if (lngStr.length >= 5) {
+          const isNegative = lngStr.startsWith('-');
+          const absStr = isNegative ? lngStr.slice(1) : lngStr;
+          const fixedLng = parseFloat(absStr.slice(0, 1) + '.' + absStr.slice(1));
+          lng = isNegative ? -fixedLng : fixedLng;
+        }
+      }
       
       // Validate coordinates before adding to activities
       if (
@@ -315,12 +335,19 @@ export async function getSuggestedActivities(): Promise<Recommendation[]> {
           duration: data.duration,
           price: data.price,
         });
+        
+        // Debug log successful coordinate parsing
+        if (data.locationLat !== lat || data.locationLng !== lng) {
+          console.log(`✅ Fixed coordinates for "${data.title}": ${data.locationLat},${data.locationLng} → ${lat},${lng}`);
+        }
       } else {
         console.warn('⚠️ Skipping activity with invalid coordinates:', {
           id: data.id,
           title: data.title,
-          lat: data.locationLat,
-          lng: data.locationLng
+          originalLat: data.locationLat,
+          originalLng: data.locationLng,
+          parsedLat: lat,
+          parsedLng: lng
         });
       }
     });
