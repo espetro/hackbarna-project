@@ -51,8 +51,18 @@ export default function MapView({
         )
       );
 
+      // Offset map center 20% above midpoint by adding more bottom padding
+      // This prevents cards from covering the markers and itinerary pins
+      const viewportHeight = mapRef.current.getMap().getContainer().clientHeight;
+      const offsetPadding = viewportHeight * 0.2; // 20% offset
+      
       mapRef.current.fitBounds(bounds, {
-        padding: { top: 100, bottom: 100, left: 100, right: 100 },
+        padding: { 
+          top: 100, 
+          bottom: 100 + offsetPadding, // Extra padding at bottom to shift view up
+          left: 100, 
+          right: 100 
+        },
         duration: 1000
       });
     }
