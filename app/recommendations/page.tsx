@@ -83,10 +83,10 @@ export default function RecommendationsPage() {
 
     addItineraryEvent(itineraryEvent);
     
-    // Show success feedback with subtle animation
-    setToastMessage(`"${rec.title}" added to itinerary`);
+    // Show success feedback with enhanced animation
+    setToastMessage(rec.title);
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    setTimeout(() => setShowToast(false), 4000);
 
     // Auto-swipe to next card after 1 second
     // Use availableRecommendations since the current one will be filtered out
@@ -243,29 +243,110 @@ export default function RecommendationsPage() {
         onAddRecommendation={handleAddToItinerary}
       />
 
-      {/* Toast Notification for Added Items */}
+      {/* Enhanced Toast Notification for Added Items */}
       <AnimatePresence>
         {showToast && (
           <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] pointer-events-none"
+            initial={{ opacity: 0, y: -50, scale: 0.8 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0, 
+              scale: 1,
+              transition: {
+                type: 'spring',
+                stiffness: 500,
+                damping: 25,
+                duration: 0.6
+              }
+            }}
+            exit={{ 
+              opacity: 0, 
+              y: -30, 
+              scale: 0.9,
+              transition: { duration: 0.3 }
+            }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] pointer-events-none"
           >
-            <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-6 py-4 rounded-full shadow-2xl border-2 border-blue-500 flex items-center gap-3">
+            <motion.div 
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-5 rounded-2xl shadow-2xl border border-blue-400/30 flex items-center gap-4 backdrop-blur-sm"
+              animate={{ 
+                boxShadow: [
+                  "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04)",
+                  "0 25px 50px -12px rgb(0 0 0 / 0.25), 0 25px 25px -5px rgb(0 0 0 / 0.1)",
+                  "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04)"
+                ]
+              }}
+              transition={{ 
+                boxShadow: { 
+                  duration: 2, 
+                  repeat: Infinity, 
+                  ease: "easeInOut" 
+                }
+              }}
+            >
+              {/* Animated Success Icon */}
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.1, type: 'spring', stiffness: 500, damping: 25 }}
-                className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ 
+                  delay: 0.2, 
+                  type: 'spring', 
+                  stiffness: 600, 
+                  damping: 25 
+                }}
+                className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"
               >
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
+                <motion.svg 
+                  className="w-6 h-6 text-white" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 0.4, duration: 0.5, ease: "easeOut" }}
+                >
+                  <motion.path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </motion.svg>
               </motion.div>
-              <span className="font-semibold">{toastMessage}</span>
-            </div>
+
+              {/* Message */}
+              <div className="flex flex-col">
+                <motion.span 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="font-bold text-lg"
+                >
+                  Added to Itinerary!
+                </motion.span>
+                <motion.span 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-sm text-blue-100"
+                >
+                  {toastMessage}
+                </motion.span>
+              </div>
+
+              {/* Calendar Icon */}
+              <motion.svg 
+                className="w-6 h-6 text-white/70 flex-shrink-0" 
+                initial={{ rotate: -20, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                transition={{ delay: 0.5, type: 'spring' }}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </motion.svg>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

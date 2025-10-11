@@ -58,7 +58,7 @@ export default function InspirationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { setRecommendations, setUserQuery } = useAppContext();
+  const { setRecommendations, setUserQuery, loadSuggestedActivities, suggestedActivitiesLoading } = useAppContext();
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,13 +99,9 @@ export default function InspirationPage() {
         // Navigate to recommendations page
         router.push('/recommendations');
       } else {
-        // Use mock data if no API endpoint is configured
-        console.log('No API endpoint configured, using mock data');
-
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        setRecommendations(mockRecommendations);
+        // Load suggested activities from Firebase
+        console.log('Loading suggested activities from Firebase...');
+        await loadSuggestedActivities();
 
         // Navigate to recommendations page
         router.push('/recommendations');
@@ -113,10 +109,17 @@ export default function InspirationPage() {
     } catch (err) {
       console.error('Error fetching recommendations:', err);
 
-      // Fallback to mock data on error
-      console.log('API call failed, using mock data as fallback');
-      setRecommendations(mockRecommendations);
-      router.push('/recommendations');
+      // Fallback to Firebase suggested activities
+      console.log('API call failed, trying Firebase suggested activities...');
+      try {
+        await loadSuggestedActivities();
+        router.push('/recommendations');
+      } catch (fbErr) {
+        console.error('Firebase also failed, using mock data as final fallback');
+        const { mockRecommendations } = await import('@/lib/mockData');
+        setRecommendations(mockRecommendations);
+        router.push('/recommendations');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -170,16 +173,16 @@ export default function InspirationPage() {
               <div className="px-8 pb-8">
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || suggestedActivitiesLoading}
                   className="w-full px-8 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-lg font-semibold rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none active:scale-[0.98]"
                 >
-                  {isLoading ? (
+                  {isLoading || suggestedActivitiesLoading ? (
                     <span className="flex items-center justify-center gap-3">
                       <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Finding experiences...
+                      {suggestedActivitiesLoading ? 'Loading activities...' : 'Finding experiences...'}
                     </span>
                   ) : (
                     'Find Experiences'

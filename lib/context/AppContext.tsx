@@ -2,7 +2,10 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { Recommendation, ItineraryEvent } from '../types';
-// Firebase disabled - using localStorage as fallback
+// Import Firebase functions for suggested activities
+import { getSuggestedActivities } from '../firebase/db';
+
+// Firebase disabled for user data - using localStorage as fallback
 const saveFavorites = async (attractions: any[], userId?: string) => {
   if (typeof window !== 'undefined') {
     try {
@@ -125,6 +128,9 @@ interface AppContextType {
   // Soft delete - track which recommendations are in itinerary
   recommendationsInItinerary: Set<number>;
   availableRecommendations: Recommendation[];
+  // Suggested activities from Firebase
+  loadSuggestedActivities: () => Promise<void>;
+  suggestedActivitiesLoading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -136,6 +142,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [favoriteAttractions, setFavoriteAttractionsState] = useState<Attraction[]>([]);
   const [itineraryEvents, setItineraryEvents] = useState<ItineraryEvent[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [suggestedActivitiesLoading, setSuggestedActivitiesLoading] = useState(false);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -319,6 +326,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return filtered;
   }, [recommendations, recommendationsInItinerary]);
 
+  // Load suggested activities from Firebase
+  const loadSuggestedActivities = useCallback(async () => {
+    setSuggestedActivitiesLoading(true);
+    try {
+      console.log('🔍 Loading suggested activities from Firebase...');
+      const activities = await getSuggestedActivities();
+      setRecommendationsState(activities);
+      console.log('✅ Loaded', activities.length, 'suggested activities from Firebase');
+    } catch (error) {
+      console.error('❌ Error loading suggested activities:', error);
+      // Fallback to mock data on error
+      const { mockRecommendations } = await import('../mockData');
+      setRecommendationsState(mockRecommendations);
+      console.log('🔄 Fallback to mock data');
+    } finally {
+      setSuggestedActivitiesLoading(false);
+    }
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -337,6 +363,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         importGoogleCalendarEvents,
         recommendationsInItinerary,
         availableRecommendations,
+        loadSuggestedActivities,
+        suggestedActivitiesLoading,
       }}
     >
       {children}

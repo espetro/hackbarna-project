@@ -13,7 +13,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ItineraryEvent } from '../types';
+import type { ItineraryEvent, Recommendation } from '../types';
 import type { Attraction } from '../context/AppContext';
 
 const DEFAULT_USER_ID = 'default-user';
@@ -23,6 +23,7 @@ const DEFAULT_USER_ID = 'default-user';
  * - users/{userId}
  * - users/{userId}/favorites/{favoriteId}
  * - users/{userId}/itinerary/{eventId}
+ * - suggestedactivities/{activityId} (global collection)
  */
 
 // ==================== USER ====================
@@ -270,6 +271,100 @@ export async function clearItinerary(
     console.log('✅ Cleared itinerary in Firebase');
   } catch (error) {
     console.error('❌ Error clearing itinerary:', error);
+    throw error;
+  }
+}
+
+// ==================== SUGGESTED ACTIVITIES ====================
+
+/**
+ * Get all suggested activities from the global collection
+ */
+export async function getSuggestedActivities(): Promise<Recommendation[]> {
+  try {
+    const activitiesRef = collection(db, 'suggestedactivities');
+    const q = query(activitiesRef, orderBy('id', 'asc'));
+    const snapshot = await getDocs(q);
+
+    const activities: Recommendation[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      activities.push({
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        image: data.image,
+        location: {
+          lat: data.locationLat,
+          lng: data.locationLng,
+        },
+        duration: data.duration,
+        price: data.price,
+      });
+    });
+
+    console.log('📥 Loaded', activities.length, 'suggested activities from Firebase');
+    return activities;
+  } catch (error) {
+    console.error('❌ Error loading suggested activities:', error);
+    return [];
+  }
+}
+
+/**
+ * Add a new suggested activity (admin function)
+ */
+export async function addSuggestedActivity(activity: Recommendation): Promise<void> {
+  try {
+    const activityRef = doc(db, 'suggestedactivities', activity.id.toString());
+    
+    await setDoc(activityRef, {
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      image: activity.image,
+      locationLat: activity.location.lat,
+      locationLng: activity.location.lng,
+      duration: activity.duration || '',
+      price: activity.price || '',
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+
+    console.log('✅ Added suggested activity to Firebase:', activity.title);
+  } catch (error) {
+    console.error('❌ Error adding suggested activity:', error);
+    throw error;
+  }
+}
+
+/**
+ * Batch import suggested activities from CSV data (admin function)
+ */
+export async function importSuggestedActivities(activities: Recommendation[]): Promise<void> {
+  try {
+    const batch = writeBatch(db);
+
+    activities.forEach((activity) => {
+      const activityRef = doc(db, 'suggestedactivities', activity.id.toString());
+      batch.set(activityRef, {
+        id: activity.id,
+        title: activity.title,
+        description: activity.description,
+        image: activity.image,
+        locationLat: activity.location.lat,
+        locationLng: activity.location.lng,
+        duration: activity.duration || '',
+        price: activity.price || '',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+    });
+
+    await batch.commit();
+    console.log('✅ Imported', activities.length, 'suggested activities to Firebase');
+  } catch (error) {
+    console.error('❌ Error importing suggested activities:', error);
     throw error;
   }
 }
