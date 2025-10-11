@@ -68,12 +68,20 @@ export default function MapView({
     }
   }, [recommendations, itineraryEvents]);
 
-  // Create GeoJSON for the route line
-  const routeGeoJSON = {
+  // Itinerary hook - re-render when itinerary changes
+  useEffect(() => {
+    // Force map to update when itinerary changes
+    if (mapRef.current) {
+      mapRef.current.getMap().triggerRepaint();
+    }
+  }, [itineraryEvents]);
+
+  // Create GeoJSON for the itinerary route line (connecting itinerary events in order)
+  const itineraryRouteGeoJSON = {
     type: 'Feature' as const,
     geometry: {
       type: 'LineString' as const,
-      coordinates: recommendations.map(rec => [rec.location.lng, rec.location.lat])
+      coordinates: itineraryEvents.map(event => [event.location.lng, event.location.lat])
     },
     properties: {}
   };
@@ -112,24 +120,23 @@ export default function MapView({
     >
       <NavigationControl position="top-right" />
 
-      {/* Route line connecting all points */}
-      {recommendations.length > 1 && (
-        <Source id="route" type="geojson" data={routeGeoJSON}>
+      {/* Route line connecting itinerary events in order */}
+      {itineraryEvents.length > 1 && (
+        <Source id="itinerary-route" type="geojson" data={itineraryRouteGeoJSON}>
           <Layer
-            id="route-line"
+            id="itinerary-route-line"
             type="line"
             paint={{
-              'line-color': '#667eea',
+              'line-color': '#3b82f6',
               'line-width': 4,
-              'line-opacity': 0.8,
-              'line-dasharray': [2, 2]
+              'line-opacity': 0.8
             }}
           />
         </Source>
       )}
 
-      {/* Markers for each recommendation */}
-      {recommendations.map((rec, index) => (
+      {/* Grey pin markers for suggested activities (recommendations) - no numbers */}
+      {recommendations.map((rec) => (
         <Marker
           key={rec.id}
           longitude={rec.location.lng}
@@ -142,24 +149,36 @@ export default function MapView({
         >
           <div
             className={`cursor-pointer transition-all duration-300 ${
-              selectedId === rec.id ? 'scale-150' : 'hover:scale-110'
+              selectedId === rec.id ? 'scale-125' : 'hover:scale-110'
             }`}
           >
-            {/* Numbered marker with gradient for active state */}
-            <div
-              className={`relative w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${
-                selectedId === rec.id
-                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 ring-4 ring-white'
-                  : 'bg-red-500'
-              }`}
-            >
-              {index + 1}
+            {/* Grey pin for suggestions */}
+            <div className="relative">
+              <svg 
+                width="32" 
+                height="42" 
+                viewBox="0 0 32 42" 
+                fill="none" 
+                className={`drop-shadow-lg ${
+                  selectedId === rec.id ? 'filter brightness-110' : ''
+                }`}
+              >
+                {/* Pin shape */}
+                <path
+                  d="M16 0C7.163 0 0 7.163 0 16c0 12 16 26 16 26s16-14 16-26c0-8.837-7.163-16-16-16z"
+                  fill={selectedId === rec.id ? '#60a5fa' : '#9ca3af'}
+                  stroke="white"
+                  strokeWidth="2"
+                />
+                {/* Inner dot */}
+                <circle cx="16" cy="16" r="5" fill="white" />
+              </svg>
             </div>
           </div>
         </Marker>
       ))}
 
-      {/* Markers for itinerary events - Grey markers in time order */}
+      {/* Numbered markers for itinerary events - connected in order */}
       {itineraryEvents.map((event, index) => (
         <Marker
           key={event.id}
@@ -174,13 +193,13 @@ export default function MapView({
           }}
         >
           <div className="cursor-pointer transition-all duration-300 hover:scale-110">
-            {/* Grey circular marker with time order number */}
+            {/* Numbered circular marker for itinerary items */}
             <div className="relative">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-lg bg-gray-600 border-2 border-gray-400">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-xl bg-gradient-to-r from-blue-600 to-indigo-600 border-4 border-white">
                 {index + 1}
               </div>
               {/* Time label below marker */}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 px-2 py-0.5 bg-gray-800/90 text-white text-xs rounded whitespace-nowrap">
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1 bg-blue-600/95 text-white text-xs font-semibold rounded-full whitespace-nowrap shadow-lg">
                 {event.startTime.toLocaleTimeString('en-US', { 
                   hour: 'numeric', 
                   minute: '2-digit',
