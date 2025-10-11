@@ -4,6 +4,14 @@ import React from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { ItineraryEvent } from '@/lib/types';
 import Image from 'next/image';
+import {
+  calculateDistance,
+  calculateTravelTime,
+  formatDistance,
+  formatTravelTime,
+  getTravelMode,
+  calculateGapBetweenEvents,
+} from '@/lib/itineraryUtils';
 
 interface ItineraryPanelProps {
   isOpen: boolean;
@@ -174,119 +182,180 @@ export default function ItineraryPanel({
                   {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
                     <div key={dateKey}>
                       {/* Date Header */}
-                      <div className="sticky top-0 bg-white dark:bg-gray-900 py-2 mb-3 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <div className="sticky top-0 bg-white dark:bg-gray-900 py-2 mb-6 z-10">
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-white">
                           {dateKey}
                         </h3>
                       </div>
 
-                      {/* Events for this date */}
-                      <div className="space-y-4">
-                        {dateEvents.map((event, index) => (
-                          <motion.div
-                            key={event.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            className="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all cursor-pointer border-2 border-gray-100 dark:border-gray-700 overflow-hidden"
-                            onClick={() => onEventClick(event)}
-                          >
-                            {/* Event Image Background (if available) */}
-                            {event.image && (
-                              <div className="relative h-32 w-full">
-                                <Image
-                                  src={event.image}
-                                  alt={event.title}
-                                  fill
-                                  className="object-cover"
-                                  sizes="100vw"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                
-                                {/* Time Badge on Image */}
-                                <div className="absolute top-3 left-3 bg-blue-600 text-white px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg">
-                                  {formatTime(event.startTime)}
-                                </div>
-                                
-                                {/* Duration Badge */}
-                                <div className="absolute top-3 right-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-900 dark:text-white px-3 py-1.5 rounded-full text-xs font-medium">
-                                  {getDuration(event.startTime, event.endTime)}
+                      {/* Timeline Events */}
+                      <div className="relative">
+                        {/* Vertical Timeline Line */}
+                        <div className="absolute left-[18px] top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-400 via-indigo-400 to-blue-400" />
+                        
+                        <div className="space-y-0">
+                        {dateEvents.map((event, index) => {
+                          const nextEvent = dateEvents[index + 1];
+                          const distance = nextEvent
+                            ? calculateDistance(
+                                event.location.lat,
+                                event.location.lng,
+                                nextEvent.location.lat,
+                                nextEvent.location.lng
+                              )
+                            : 0;
+                          const travelTime = nextEvent ? calculateTravelTime(distance) : 0;
+                          const travelMode = nextEvent ? getTravelMode(distance) : 'walking';
+                          const gapTime = nextEvent ? calculateGapBetweenEvents(event, nextEvent) : 0;
+
+                          return (
+                            <React.Fragment key={event.id}>
+                              {/* Event Card */}
+                              <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="relative mb-6"
+                              >
+                                {/* Timeline Number Circle */}
+                                <div className="absolute left-0 top-8 z-10 w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg border-4 border-white dark:border-gray-900">
+                                  {index + 1}
                                 </div>
 
-                                {/* Remove Button */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRemoveEvent(event.id);
-                                  }}
-                                  className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-red-500 hover:bg-red-600 rounded-full text-white shadow-lg"
-                                  aria-label="Remove event"
+                                {/* Event Content Card */}
+                                <div
+                                  className="ml-16 bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all cursor-pointer border border-gray-200 dark:border-gray-700 overflow-hidden group"
+                                  onClick={() => onEventClick(event)}
                                 >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              </div>
-                            )}
+                                  {/* Event Content - Timeline Style */}
+                                  <div className="p-5">
+                                    {/* Title - Prominent */}
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                                      {event.title}
+                                    </h3>
 
-                            {/* Event Content */}
-                            <div className="p-4">
-                              {/* If no image, show time at top */}
-                              {!event.image && (
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="bg-blue-600 text-white px-3 py-1.5 rounded-full text-sm font-semibold">
-                                    {formatTime(event.startTime)}
+                                    {/* Time - Extra Prominent with Clock Icon */}
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      <span className="text-2xl font-bold text-gray-800 dark:text-white">
+                                        {formatTime(event.startTime)}
+                                      </span>
+                                    </div>
+
+                                    {/* Duration with Icon */}
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      <span className="text-base text-gray-600 dark:text-gray-400">
+                                        {getDuration(event.startTime, event.endTime)}
+                                      </span>
+                                    </div>
+
+                                    {/* Price (if available) */}
+                                    {event.recommendationId && (
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span className="text-base text-gray-600 dark:text-gray-400">
+                                          €{15 + index * 5}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* Category Tag */}
+                                    <div className="flex items-center gap-2 mb-4">
+                                      <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                      </svg>
+                                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                                        {event.source === 'recommendation' ? 'activity' : 'event'}
+                                      </span>
+                                    </div>
+
+                                    {/* Description */}
+                                    {event.description && (
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                                        {event.description}
+                                      </p>
+                                    )}
+
+                                    {/* Location with Full Address */}
+                                    <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                      <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      </svg>
+                                      <span className="leading-relaxed">
+                                        {event.location.name}
+                                      </span>
+                                    </div>
+
+                                    {/* Remove Button - Top Right */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onRemoveEvent(event.id);
+                                      }}
+                                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-red-500 hover:bg-red-600 rounded-full text-white shadow-lg"
+                                      aria-label="Remove event"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </button>
                                   </div>
-                                  <div className="text-gray-600 dark:text-gray-400 text-sm">
-                                    {getDuration(event.startTime, event.endTime)}
+                                </div>
+                              </motion.div>
+
+                              {/* Travel Segment Between Events */}
+                              {nextEvent && (
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: index * 0.05 + 0.1 }}
+                                  className="relative mb-6 ml-16"
+                                >
+                                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 border-l-4 border-blue-400">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        {/* Travel Mode Icon */}
+                                        {travelMode === 'walking' ? (
+                                          <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                          </svg>
+                                        ) : (
+                                          <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                          </svg>
+                                        )}
+                                        <div>
+                                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                            {travelMode === 'walking' ? '🚶 Walking' : '🚕 Transit'}
+                                          </div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                                            {formatDistance(distance)} • {formatTravelTime(travelTime)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Gap Time Info */}
+                                      {gapTime > travelTime + 5 && (
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                          +{formatTravelTime(gapTime - travelTime)} buffer
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onRemoveEvent(event.id);
-                                    }}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full text-red-600 dark:text-red-400"
-                                    aria-label="Remove event"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                  </button>
-                                </div>
+                                </motion.div>
                               )}
-
-                              {/* Title */}
-                              <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                                {event.title}
-                              </h4>
-
-                              {/* Description */}
-                              {event.description && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                                  {event.description}
-                                </p>
-                              )}
-
-                              {/* Footer Info */}
-                              <div className="flex items-center justify-between gap-3 text-xs">
-                                {/* Location */}
-                                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 flex-1 min-w-0">
-                                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  </svg>
-                                  <span className="line-clamp-1 font-medium">{event.location.name}</span>
-                                </div>
-
-                                {/* Source Badge */}
-                                <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-700 dark:text-gray-300">
-                                  {getSourceIcon(event.source)}
-                                  <span className="capitalize text-xs font-medium">{event.source.replace('_', ' ')}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
                       </div>
                     </div>
                   ))}
