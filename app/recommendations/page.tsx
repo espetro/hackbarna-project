@@ -10,8 +10,9 @@ import ItineraryMenu from '@/components/ItineraryMenu';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Recommendation, ItineraryEvent } from '@/lib/types';
-import { initGoogleCalendarAPI, importGoogleCalendarEvents } from '@/lib/googleCalendar';
+import { importFromCalendarUrl } from '@/lib/googleCalendarPublic';
 import { generateMockItineraryEvents } from '@/lib/mockItineraryData';
+import CalendarImportModal from '@/components/CalendarImportModal';
 
 export default function RecommendationsPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function RecommendationsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
 
   // Redirect to inspiration page if no available recommendations
   useEffect(() => {
@@ -100,60 +102,40 @@ export default function RecommendationsPage() {
     }, 1000);
   };
 
-  // Import events from Google Calendar (with mock data fallback for demo)
-  const handleImportCalendar = async () => {
-    if (isImporting) return;
+  // Open calendar import modal
+  const handleImportCalendar = () => {
+    setIsCalendarModalOpen(true);
+  };
 
+  // Import events from Google Calendar URL
+  const handleCalendarImport = async (calendarUrl: string) => {
     setIsImporting(true);
     try {
-      // For demo purposes, we'll use mock data
-      // In production, you can uncomment the Google Calendar API integration below
+      console.log('Importing calendar from URL:', calendarUrl);
       
-      // Generate beautiful mock itinerary
-      const mockEvents = generateMockItineraryEvents();
+      // Import events from the public calendar
+      const events = await importFromCalendarUrl(calendarUrl);
       
-      // Add a small delay to simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Add events to context
-      importToContext(mockEvents);
-      
-      // Show success message
-      alert(`✓ Successfully imported ${mockEvents.length} event(s) from your calendar!`);
-      
-      // Open itinerary to show imported events
-      setIsItineraryOpen(true);
-
-      /* 
-      // PRODUCTION CODE (Uncomment when Google Calendar API is configured):
-      
-      // Initialize Google Calendar API
-      const initialized = await initGoogleCalendarAPI();
-      if (!initialized) {
-        alert('Failed to initialize Google Calendar. Please check your API credentials.');
-        return;
-      }
-
-      // Import events from next 7 days
-      const events = await importGoogleCalendarEvents();
-      
-      if (events.length === 0) {
-        alert('No events found in your calendar for the next 7 days.');
-        return;
-      }
-
       // Add events to context
       importToContext(events);
       
       // Show success message
-      alert(`✓ Successfully imported ${events.length} event(s) from Google Calendar!`);
+      setToastMessage(`✓ Successfully imported ${events.length} event(s) from calendar!`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
       
       // Open itinerary to show imported events
       setIsItineraryOpen(true);
-      */
+
     } catch (error) {
       console.error('Error importing calendar:', error);
-      alert('Failed to import calendar events. Please try again.');
+      
+      // Re-throw error to be handled by the modal
+      throw new Error(
+        error instanceof Error 
+          ? error.message 
+          : 'Failed to import calendar events. Please try again.'
+      );
     } finally {
       setIsImporting(false);
     }
@@ -402,6 +384,14 @@ export default function RecommendationsPage() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Calendar Import Modal */}
+      <CalendarImportModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        onImport={handleCalendarImport}
+        isImporting={isImporting}
+      />
     </div>
   );
 }
