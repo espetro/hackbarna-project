@@ -27,8 +27,6 @@ export default function RecommendationsPage() {
   const [expandedCard, setExpandedCard] = useState<Recommendation | null>(null);
   const [isItineraryOpen, setIsItineraryOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [isDatePickerExpanded, setIsDatePickerExpanded] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Redirect to inspiration page if no recommendations
   useEffect(() => {
@@ -152,12 +150,6 @@ export default function RecommendationsPage() {
     setIsItineraryOpen(true);
   };
 
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    // Filter activities by selected date
-    console.log('Selected date:', date);
-  };
-
   if (recommendations.length === 0) {
     return null; // Will redirect
   }
@@ -165,7 +157,7 @@ export default function RecommendationsPage() {
   const currentRecommendation = recommendations[currentIndex];
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
+    <div className="relative h-screen w-full overflow-hidden">
       {/* Map Background - Full screen */}
       <div className="absolute inset-0 z-0">
         <MapView
@@ -201,91 +193,22 @@ export default function RecommendationsPage() {
         eventCount={itineraryEvents.length}
       />
 
-      {/* Week Activities & Date Picker Buttons - Top Right */}
-      <div className="fixed top-6 right-6 z-30 flex flex-col gap-3 items-end">
-        {/* Primary Button - See activities for this week */}
+      {/* Floating Action Button - Bottom Center */}
+      <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-30">
         <motion.button
           onClick={handleSeeWeekActivities}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all flex items-center gap-3 px-6 py-3"
-          whileHover={{ scale: 1.05 }}
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all flex items-center gap-3 px-8 py-4"
+          whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.95 }}
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 20 }}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span className="font-semibold text-base">See Activities for This Week</span>
+          <span className="font-bold text-lg">See Activities for This Week</span>
         </motion.button>
-
-        {/* Secondary Draggable Button - Date Picker */}
-        <motion.div
-          drag={!isDatePickerExpanded}
-          dragConstraints={{ top: 0, left: 0, right: 0, bottom: 0 }}
-          dragElastic={0.1}
-          onDragEnd={(_, info) => {
-            // If dragged significantly, expand it
-            if (Math.abs(info.offset.x) > 50 || Math.abs(info.offset.y) > 50) {
-              setIsDatePickerExpanded(true);
-            }
-          }}
-          animate={{
-            width: isDatePickerExpanded ? '320px' : '56px',
-          }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full shadow-xl border-2 border-gray-200 dark:border-gray-600 transition-all overflow-hidden"
-        >
-          <div className="flex items-center h-14">
-            {/* Icon (always visible) */}
-            <motion.button
-              onClick={() => setIsDatePickerExpanded(!isDatePickerExpanded)}
-              className="flex-shrink-0 w-14 h-14 flex items-center justify-center"
-              whileHover={{ scale: isDatePickerExpanded ? 1 : 1.1 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </motion.button>
-
-            {/* Date Picker Content (expanded state) */}
-            <AnimatePresence>
-              {isDatePickerExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="flex-1 px-4 py-2"
-                >
-                  <input
-                    type="date"
-                    value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
-                    onChange={(e) => {
-                      const date = new Date(e.target.value);
-                      handleDateSelect(date);
-                    }}
-                    className="w-full bg-transparent border-none outline-none text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Close button (when expanded) */}
-            <AnimatePresence>
-              {isDatePickerExpanded && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  onClick={() => setIsDatePickerExpanded(false)}
-                  className="flex-shrink-0 w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full mr-2"
-                >
-                  <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
       </div>
 
       {/* Itinerary Panel - Slide-out */}
