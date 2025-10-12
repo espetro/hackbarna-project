@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
 
 const withLingo = lingoCompiler.next({
   sourceLocale: "en",
-  targetLocales: ["en", "es", "ca", "ru", "pt", "fr"],
+  targetLocales: ["en", "es", "ca"],
   models: {
     "*:*": "google:gemini-2.0-flash", // Option 2: Google AI
   },
