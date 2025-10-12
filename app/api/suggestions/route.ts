@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     const filtered = mockRankedActivities
       .filter(activity => {
         // Match travel style
-        if (preferences.travelStyle.includes(activity.category || 'other')) {
+        if (activity.category && preferences.travelStyle.includes(activity.category as any)) {
           return true;
         }
         // Match tags with interests
