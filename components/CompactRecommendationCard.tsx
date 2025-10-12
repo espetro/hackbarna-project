@@ -17,14 +17,25 @@ export default function CompactRecommendationCard({
     <div className="bg-white/90 dark:bg-black/90 backdrop-blur-md rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
       <div className="flex items-center gap-3 p-3">
         {/* Small Image */}
-        <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-          <Image
-            src={recommendation.image || '/assets/barceloneta.png'}
-            alt={recommendation.title}
-            fill
-            className="object-cover"
-            sizes="64px"
-          />
+        <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700">
+          {recommendation.image ? (
+            <Image
+              src={recommendation.image}
+              alt={recommendation.title}
+              fill
+              className="object-cover"
+              sizes="64px"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          )}
         </div>
 
         {/* Content */}

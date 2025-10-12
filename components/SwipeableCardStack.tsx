@@ -69,17 +69,29 @@ export default function SwipeableCardStack({
         >
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden h-full flex flex-col border-2 border-blue-500">
             {/* Image Section */}
-            <div 
-              className="relative h-32 md:h-40 flex-shrink-0 cursor-grab active:cursor-grabbing"
+            <div
+              className="relative h-32 md:h-40 flex-shrink-0 cursor-grab active:cursor-grabbing bg-gray-200 dark:bg-gray-700"
               onClick={() => onCardClick(currentRec)}
             >
-              <Image
-                src={currentRec.image || '/assets/barceloneta.png'}
-                alt={currentRec.title}
-                fill
-                className="object-cover"
-                sizes="400px"
-              />
+              {currentRec.image ? (
+                <Image
+                  src={currentRec.image}
+                  alt={currentRec.title}
+                  fill
+                  className="object-cover"
+                  sizes="400px"
+                  onError={(e) => {
+                    // Fallback to placeholder on error
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <svg className="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              )}
               <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded-full text-xs font-semibold">
                 {currentIndex + 1}/{recommendations.length}
               </div>
