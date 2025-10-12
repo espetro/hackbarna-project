@@ -2,10 +2,12 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { Recommendation, ItineraryEvent } from '../types';
-// Import Firebase functions 
+// Import Firebase functions
 import { getSuggestedActivities } from '../firebase/db';
 // Import smart suggestions utilities
 import { generateSmartSuggestions, SmartSuggestion } from '../smartSuggestions';
+// Import overlap detection
+import { checkForOverlaps } from '../itineraryIntelligence';
 
 // Firebase enabled for suggested activities, localStorage fallback for user data
 const saveFavorites = async (attractions: any[], userId?: string) => {
@@ -259,34 +261,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setItineraryEvents((prev) => {
       // Check if event already exists (by ID or by recommendationId to prevent duplicates)
       const existsById = prev.some(e => e.id === event.id);
-      const existsByRecommendation = event.recommendationId && prev.some(e => 
-        e.recommendationId === event.recommendationId && 
+      const existsByRecommendation = event.recommendationId && prev.some(e =>
+        e.recommendationId === event.recommendationId &&
         e.source === event.source
       );
-      
+
       if (existsById) {
         console.log('⚠️ Event already exists in itinerary (duplicate ID)');
         return prev;
       }
-      
+
       if (existsByRecommendation) {
         console.log('⚠️ Recommendation already in itinerary (duplicate activity)');
         return prev;
       }
 
+      // Check for time overlaps with existing events
+      const overlapCheck = checkForOverlaps(
+        { startTime: event.startTime, endTime: event.endTime },
+        prev
+      );
+
+      if (overlapCheck.hasOverlap) {
+        console.warn('⚠️ Time overlap detected:', overlapCheck.message);
+        console.warn('🚫 Cannot add activity due to overlap with:',
+          overlapCheck.conflictingEvents.map(e => `"${e.title}"`).join(', ')
+        );
+        // Still return prev to prevent adding the conflicting event
+        return prev;
+      }
+
+      console.log('✅ No overlaps detected, adding event to itinerary');
+
       // Add and sort by startTime
       const updated = [...prev, event];
       const sorted = updated.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-      
+
       // Final safety check: Remove any duplicates that might have slipped through
-      const deduped = sorted.filter((event, index, arr) => 
+      const deduped = sorted.filter((event, index, arr) =>
         arr.findIndex(e => e.id === event.id) === index
       );
-      
+
       if (deduped.length !== sorted.length) {
         console.warn('🧹 Removed', sorted.length - deduped.length, 'duplicate events during add');
       }
-      
+
       console.log('✅ Itinerary updated. Total events:', deduped.length);
 
       // Persist to localStorage

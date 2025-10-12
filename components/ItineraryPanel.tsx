@@ -13,6 +13,12 @@ import {
   calculateGapBetweenEvents,
 } from '@/lib/itineraryUtils';
 import SmartSuggestionsPanel from './SmartSuggestionsPanel';
+import GapRecommendationCard from './GapRecommendationCard';
+import {
+  detectTimeGaps,
+  filterRecommendationsForGap,
+  TimeGap,
+} from '@/lib/itineraryIntelligence';
 
 interface ItineraryPanelProps {
   isOpen: boolean;
@@ -210,6 +216,22 @@ export default function ItineraryPanel({
 
   const gaps = detectGaps();
 
+  // NEW: Use intelligent gap detection and filtering
+  const intelligentGaps = React.useMemo(() => {
+    return detectTimeGaps(events, selectedDate);
+  }, [events, selectedDate]);
+
+  // Track recommendations already in itinerary
+  const recommendationsInItinerary = React.useMemo(() => {
+    const ids = new Set<number>();
+    events.forEach(event => {
+      if (event.recommendationId !== undefined) {
+        ids.add(event.recommendationId);
+      }
+    });
+    return ids;
+  }, [events]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -379,16 +401,22 @@ export default function ItineraryPanel({
                       const isRecommendation = event.source === 'recommendation';
                       const isExpanded = expandedEventIds.has(event.id);
 
-                      // Check if there's a gap before this event
-                      const gapBefore = gaps.find(g =>
-                        g.endHour === event.startTime.getHours() &&
-                        g.endMinute === event.startTime.getMinutes()
-                      );
+                      // NEW: Find intelligent gap before this event
+                      const intelligentGapBefore = intelligentGaps.find(gap => {
+                        const gapEnd = gap.endTime.getTime();
+                        const eventStart = event.startTime.getTime();
+                        return Math.abs(gapEnd - eventStart) < 60000; // Within 1 minute
+                      });
+
+                      // NEW: Get filtered recommendations for this gap
+                      const filteredFits = intelligentGapBefore
+                        ? filterRecommendationsForGap(intelligentGapBefore, recommendations, recommendationsInItinerary).slice(0, 5)
+                        : [];
 
                       return (
                         <React.Fragment key={event.id}>
-                          {/* Gap Block with Recommendations */}
-                          {gapBefore && recommendations.length > 0 && onAddRecommendation && (
+                          {/* NEW: Enhanced Gap Block with Intelligent Recommendations */}
+                          {intelligentGapBefore && filteredFits.length > 0 && onAddRecommendation && (
                             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 my-3">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
@@ -396,43 +424,41 @@ export default function ItineraryPanel({
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                   </svg>
                                   <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                                    Add activity here
+                                    {filteredFits.length} smart {filteredFits.length === 1 ? 'suggestion' : 'suggestions'} for this gap
                                   </span>
                                 </div>
-                                <span className="text-xs text-blue-600 dark:text-blue-400">
-                                  {Math.floor(gapBefore.durationMinutes / 60)}h {Math.floor(gapBefore.durationMinutes % 60)}m free
+                                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                  {Math.floor(intelligentGapBefore.durationMinutes / 60)}h {Math.floor(intelligentGapBefore.durationMinutes % 60)}m free
                                 </span>
                               </div>
 
-                              {/* Recommendation Carousel */}
+                              {/* NEW: Intelligent Recommendation Carousel */}
                               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                                {recommendations.slice(0, 5).map((rec) => (
-                                  <div
-                                    key={rec.id}
-                                    className="flex-shrink-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
-                                    onClick={() => onAddRecommendation(rec)}
-                                  >
-                                    {rec.image && (
-                                      <div className="relative h-24 w-full">
-                                        <Image
-                                          src={rec.image}
-                                          alt={rec.title}
-                                          fill
-                                          className="object-cover"
-                                          sizes="200px"
-                                        />
-                                      </div>
-                                    )}
-                                    <div className="p-3">
-                                      <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1 mb-1">
-                                        {rec.title}
-                                      </h4>
-                                      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                                        <span>{rec.duration}</span>
-                                        <span>{rec.price}</span>
-                                      </div>
-                                    </div>
-                                  </div>
+                                {filteredFits.map((fit) => (
+                                  <GapRecommendationCard
+                                    key={fit.recommendation.id}
+                                    fit={fit}
+                                    onAdd={() => {
+                                      // Create itinerary event with intelligent suggested times
+                                      const uniqueId = `rec-${fit.recommendation.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                      const itineraryEvent: ItineraryEvent = {
+                                        id: uniqueId,
+                                        title: fit.recommendation.title,
+                                        description: fit.recommendation.description,
+                                        location: {
+                                          name: fit.recommendation.title,
+                                          lat: fit.recommendation.location.lat,
+                                          lng: fit.recommendation.location.lng,
+                                        },
+                                        startTime: fit.suggestedStartTime,
+                                        endTime: fit.suggestedEndTime,
+                                        source: 'recommendation',
+                                        recommendationId: fit.recommendation.id,
+                                        image: fit.recommendation.image,
+                                      };
+                                      onAddRecommendation(fit.recommendation);
+                                    }}
+                                  />
                                 ))}
                               </div>
                             </div>
@@ -536,55 +562,59 @@ export default function ItineraryPanel({
                       );
                     })}
 
-                    {/* Final gap after all events */}
-                    {gaps.length > 0 && gaps[gaps.length - 1].endHour >= dayEvents[dayEvents.length - 1]?.endTime.getHours() && recommendations.length > 0 && onAddRecommendation && (
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 mt-3">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                              Add activity here
+                    {/* NEW: Final gap after all events with intelligent filtering */}
+                    {(() => {
+                      const finalGap = intelligentGaps.find(gap => gap.isEndOfDay);
+                      const finalFits = finalGap
+                        ? filterRecommendationsForGap(finalGap, recommendations, recommendationsInItinerary).slice(0, 5)
+                        : [];
+
+                      return finalGap && finalFits.length > 0 && onAddRecommendation ? (
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl p-4 mt-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                              <span className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                                {finalFits.length} evening {finalFits.length === 1 ? 'suggestion' : 'suggestions'}
+                              </span>
+                            </div>
+                            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                              {Math.floor(finalGap.durationMinutes / 60)}h {Math.floor(finalGap.durationMinutes % 60)}m free
                             </span>
                           </div>
-                          <span className="text-xs text-blue-600 dark:text-blue-400">
-                            Evening slot
-                          </span>
-                        </div>
 
-                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                          {recommendations.slice(0, 5).map((rec) => (
-                            <div
-                              key={rec.id}
-                              className="flex-shrink-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
-                              onClick={() => onAddRecommendation(rec)}
-                            >
-                              {rec.image && (
-                                <div className="relative h-24 w-full">
-                                  <Image
-                                    src={rec.image}
-                                    alt={rec.title}
-                                    fill
-                                    className="object-cover"
-                                    sizes="200px"
-                                  />
-                                </div>
-                              )}
-                              <div className="p-3">
-                                <h4 className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1 mb-1">
-                                  {rec.title}
-                                </h4>
-                                <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                                  <span>{rec.duration}</span>
-                                  <span>{rec.price}</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                            {finalFits.map((fit) => (
+                              <GapRecommendationCard
+                                key={fit.recommendation.id}
+                                fit={fit}
+                                onAdd={() => {
+                                  const uniqueId = `rec-${fit.recommendation.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                  const itineraryEvent: ItineraryEvent = {
+                                    id: uniqueId,
+                                    title: fit.recommendation.title,
+                                    description: fit.recommendation.description,
+                                    location: {
+                                      name: fit.recommendation.title,
+                                      lat: fit.recommendation.location.lat,
+                                      lng: fit.recommendation.location.lng,
+                                    },
+                                    startTime: fit.suggestedStartTime,
+                                    endTime: fit.suggestedEndTime,
+                                    source: 'recommendation',
+                                    recommendationId: fit.recommendation.id,
+                                    image: fit.recommendation.image,
+                                  };
+                                  onAddRecommendation(fit.recommendation);
+                                }}
+                              />
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ) : null;
+                    })()}
                   </div>
 
                   {/* Smart Suggestions Panel - Show if there are events and smart suggestions */}

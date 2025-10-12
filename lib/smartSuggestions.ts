@@ -104,6 +104,7 @@ export function parseDurationToMinutes(duration: string | undefined): number {
 
 /**
  * Generate smart suggestions for empty slots in the itinerary
+ * Now uses the enhanced intelligence system for better filtering
  */
 export function generateSmartSuggestions(
   itineraryEvents: ItineraryEvent[],
@@ -112,21 +113,33 @@ export function generateSmartSuggestions(
 ): SmartSuggestion[] {
   const emptySlots = findEmptySlots(itineraryEvents, minSlotMinutes);
   const suggestions: SmartSuggestion[] = [];
-  
+
+  // Get IDs of activities already in itinerary to exclude them
+  const activitiesInItinerary = new Set(
+    itineraryEvents
+      .filter(event => event.recommendationId !== undefined)
+      .map(event => event.recommendationId!)
+  );
+
   for (const slot of emptySlots) {
     // For each slot, find activities that could fit
     const slotSuggestions: SmartSuggestion[] = [];
-    
+
     for (const activity of availableActivities) {
+      // Skip if already in itinerary
+      if (activitiesInItinerary.has(activity.id)) {
+        continue;
+      }
+
       const activityDurationMinutes = parseDurationToMinutes(activity.duration);
       const fitsInSlot = activityDurationMinutes <= slot.availableMinutes;
-      
+
       if (!fitsInSlot) continue; // Skip if doesn't fit
-      
+
       // Calculate distance to closest adjacent activity
       let distanceToClosest = Infinity;
       let closestActivity: 'previous' | 'next' = 'previous';
-      
+
       if (slot.previousActivity) {
         const distToPrev = calculateActivityDistance(activity, slot.previousActivity);
         if (distToPrev < distanceToClosest) {
@@ -134,7 +147,7 @@ export function generateSmartSuggestions(
           closestActivity = 'previous';
         }
       }
-      
+
       if (slot.nextActivity) {
         const distToNext = calculateActivityDistance(activity, slot.nextActivity);
         if (distToNext < distanceToClosest) {
@@ -142,12 +155,12 @@ export function generateSmartSuggestions(
           closestActivity = 'next';
         }
       }
-      
+
       // Calculate suggested timing
       const bufferMinutes = 15; // 15 min buffer after previous activity
       const suggestedStartTime = new Date(slot.startTime.getTime() + bufferMinutes * 60 * 1000);
       const suggestedEndTime = new Date(suggestedStartTime.getTime() + activityDurationMinutes * 60 * 1000);
-      
+
       // Make sure it still fits with buffer
       if (suggestedEndTime <= slot.endTime) {
         slotSuggestions.push({
@@ -161,14 +174,15 @@ export function generateSmartSuggestions(
         });
       }
     }
-    
+
     // Sort by distance (closest first) and take top suggestions
     slotSuggestions.sort((a, b) => a.distanceToClosest - b.distanceToClosest);
-    
+
     // Add top 3 suggestions for this slot
     suggestions.push(...slotSuggestions.slice(0, 3));
   }
-  
+
+  console.log('🧠 Generated smart suggestions:', suggestions.length, '| Filtered out activities already in itinerary');
   return suggestions;
 }
 
