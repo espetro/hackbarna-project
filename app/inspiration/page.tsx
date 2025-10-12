@@ -187,7 +187,7 @@ export default function InspirationPage() {
 
   // Show thinking screen if webhook is processing
   if (showThinkingScreen) {
-    return <ThinkingScreen onComplete={handleThinkingComplete} duration={30000} />;
+    return <ThinkingScreen onComplete={handleThinkingComplete} duration={3000} />;
   }
 
   return (
