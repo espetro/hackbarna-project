@@ -1,12 +1,13 @@
 import { NextConfig } from "next";
+import lingoCompiler from "lingo.dev/compiler";
 
 const nextConfig: NextConfig = {
   output: "standalone",
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**',
+        protocol: "https",
+        hostname: "**",
       },
     ],
     // Optimize images and handle large files better
@@ -15,7 +16,7 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     // Set limits for image optimization
     dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
+    contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   // Increase API timeout for image optimization
@@ -24,4 +25,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withLingo = lingoCompiler.next({
+  sourceLocale: "en",
+  targetLocales: ["es"],
+  models: {
+    "*:*": "google:gemini-2.0-flash", // Option 2: Google AI
+  },
+});
+
+// export default nextConfig
+export default withLingo(nextConfig);
