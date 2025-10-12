@@ -51,10 +51,16 @@ export default function RecommendationsPage() {
   }, [recommendations.length, loadSuggestedActivities, suggestedActivitiesLoading]);
 
   // Redirect to inspiration page if no available recommendations after loading
+  // BUT: Give it time to load (don't redirect immediately on mount)
   useEffect(() => {
-    if (availableRecommendations.length === 0 && recommendations.length === 0 && !suggestedActivitiesLoading) {
-      router.push('/inspiration');
-    }
+    const timer = setTimeout(() => {
+      if (availableRecommendations.length === 0 && recommendations.length === 0 && !suggestedActivitiesLoading) {
+        console.log('⚠️ No recommendations found, redirecting to inspiration...');
+        router.push('/inspiration');
+      }
+    }, 1000); // Wait 1 second before redirecting
+
+    return () => clearTimeout(timer);
   }, [availableRecommendations, recommendations, router, suggestedActivitiesLoading]);
 
   // Booking functionality removed - commented out
