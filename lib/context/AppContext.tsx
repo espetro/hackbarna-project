@@ -427,8 +427,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addItineraryEvent(itineraryEvent);
   }, [addItineraryEvent]);
 
-  // Load suggested activities from Firebase
+  // Load suggested activities from Firebase (only if no recommendations exist)
   const loadSuggestedActivities = useCallback(async () => {
+    // Don't load if we already have recommendations (e.g., from webhook)
+    if (recommendations.length > 0) {
+      console.log('⚠️ Skipping Firebase load - recommendations already exist:', recommendations.length);
+      return;
+    }
+
     setSuggestedActivitiesLoading(true);
     try {
       console.log('🔍 Loading suggested activities from Firebase...');
@@ -444,7 +450,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setSuggestedActivitiesLoading(false);
     }
-  }, []);
+  }, [recommendations.length]);
 
   return (
     <AppContext.Provider

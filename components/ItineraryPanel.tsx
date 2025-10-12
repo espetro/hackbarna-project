@@ -410,7 +410,9 @@ export default function ItineraryPanel({
 
                       // NEW: Get filtered recommendations for this gap
                       const filteredFits = intelligentGapBefore
-                        ? filterRecommendationsForGap(intelligentGapBefore, recommendations, recommendationsInItinerary).slice(0, 5)
+                        ? filterRecommendationsForGap(intelligentGapBefore, recommendations, recommendationsInItinerary)
+                            .filter(fit => fit && fit.recommendation) // Safety check
+                            .slice(0, 5)
                         : [];
 
                       return (
@@ -566,7 +568,9 @@ export default function ItineraryPanel({
                     {(() => {
                       const finalGap = intelligentGaps.find(gap => gap.isEndOfDay);
                       const finalFits = finalGap
-                        ? filterRecommendationsForGap(finalGap, recommendations, recommendationsInItinerary).slice(0, 5)
+                        ? filterRecommendationsForGap(finalGap, recommendations, recommendationsInItinerary)
+                            .filter(fit => fit && fit.recommendation) // Safety check
+                            .slice(0, 5)
                         : [];
 
                       return finalGap && finalFits.length > 0 && onAddRecommendation ? (
