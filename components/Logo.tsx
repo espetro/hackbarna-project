@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import Image from "next/image";
 
 interface LogoProps {
   className?: string;
@@ -6,16 +6,22 @@ interface LogoProps {
   height?: number;
 }
 
-export default function Logo({ className = '', width = 120, height = 40 }: LogoProps) {
+const altText = "TetrisTravel Logo";
+
+export default function Logo({
+  className = "",
+  width = 120,
+  height = 40,
+}: LogoProps) {
   return (
     <Image
       src="/assets/logo.svg"
-      alt="TetrisTravel Logo"
+      alt={altText} // alt text as a constant outside JSX
       width={width}
       height={height}
       className={className}
       priority
-      style={{ background: 'transparent' }}
+      style={{ background: "transparent" }}
     />
   );
 }

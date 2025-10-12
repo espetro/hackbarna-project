@@ -8,10 +8,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default lingoCompiler.next({
+const withLingo = lingoCompiler.next({
   sourceLocale: "en",
-  targetLocales: ["es", "fr", "de"],
+  targetLocales: ["es"],
   models: {
     "*:*": "google:gemini-2.0-flash", // Option 2: Google AI
   },
-})(nextConfig);
+});
+
+// export default nextConfig
+export default withLingo(nextConfig);
