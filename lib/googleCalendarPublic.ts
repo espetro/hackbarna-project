@@ -173,19 +173,29 @@ function extractLocationFromICalEvent(event: any): { name: string; lat: number; 
 
 /**
  * Fetch events from a public iCal URL
+ * Uses server-side proxy to bypass CORS restrictions
  */
 async function fetchICalEvents(icalUrl: string): Promise<ItineraryEvent[]> {
   try {
-    console.log('Fetching iCal from:', icalUrl);
+    console.log('📅 Fetching iCal from:', icalUrl);
 
-    const response = await fetch(icalUrl);
+    // Use the proxy API route to bypass CORS
+    const proxyUrl = `/api/proxy-ical?url=${encodeURIComponent(icalUrl)}`;
+    console.log('🔄 Using proxy:', proxyUrl);
+
+    const response = await fetch(proxyUrl);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch iCal: ${response.status}`);
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('❌ Proxy fetch failed:', errorData);
+      throw new Error(errorData.error || `Failed to fetch iCal: ${response.status}`);
     }
 
     const icalText = await response.text();
+    console.log('✅ Received iCal data:', icalText.length, 'bytes');
+
     const events = await parseICalEvents(icalText);
+    console.log('📊 Parsed', events.length, 'total events');
 
     // Filter events to next 30 days
     const now = new Date();
@@ -195,10 +205,10 @@ async function fetchICalEvents(icalUrl: string): Promise<ItineraryEvent[]> {
       event.startTime >= now && event.startTime <= thirtyDaysFromNow
     );
 
-    console.log(`Successfully imported ${filteredEvents.length} events from iCal`);
+    console.log(`✅ Successfully imported ${filteredEvents.length} events from iCal (filtered to next 30 days)`);
     return filteredEvents;
   } catch (error) {
-    console.error('Error fetching iCal events:', error);
+    console.error('❌ Error fetching iCal events:', error);
     throw error;
   }
 }
