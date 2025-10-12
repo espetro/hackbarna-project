@@ -224,7 +224,7 @@ export default function InspirationPage() {
         {/* Header */}
         <div className="text-center mb-16">
           <div className="flex justify-center mb-8">
-            <Logo width={160} height={53} />
+            <Logo width={120} height={40} />
           </div>
           <h1 className="text-4xl md:text-5xl font-light text-gray-900 dark:text-white mb-2">
             What do u fancy and when can you make it?

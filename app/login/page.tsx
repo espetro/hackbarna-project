@@ -55,7 +55,7 @@ export default function LoginPage() {
         <div className="max-w-md w-full space-y-8">
           {/* Logo */}
           <div className="flex justify-center">
-            <Logo width={160} height={53} />
+            <Logo width={120} height={40} />
           </div>
 
           {/* Header */}
