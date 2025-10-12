@@ -5,6 +5,7 @@
 
 'use client';
 
+import Link from 'next/link';
 import VideoCarousel from '@/components/VideoCarousel';
 
 // Example video items - replace with your actual video sources
@@ -95,12 +96,12 @@ export default function DemoPage() {
         </div>
 
         <div className="mt-8 text-center">
-          <a
+          <Link
             href="/"
             className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-full transition-all"
           >
             ← Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     </main>

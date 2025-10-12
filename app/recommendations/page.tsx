@@ -230,7 +230,7 @@ export default function RecommendationsPage() {
               All Activities Added!
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-8">
-              You've added all suggested activities to your itinerary. Great job planning your trip!
+              You&apos;ve added all suggested activities to your itinerary. Great job planning your trip!
             </p>
             <div className="flex flex-col gap-3">
               <button

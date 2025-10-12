@@ -134,7 +134,7 @@ export default function CalendarImportModal({
                     <li>1. Open Google Calendar in your browser</li>
                     <li>2. Find the calendar you want to share</li>
                     <li>3. Click the three dots next to it</li>
-                    <li>4. Select "Settings and sharing"</li>
+                    <li>4. Select &quot;Settings and sharing&quot;</li>
                     <li>5. Make the calendar public</li>
                     <li>6. Copy the calendar URL from your browser</li>
                   </ol>
