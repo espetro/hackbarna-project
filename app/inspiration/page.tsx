@@ -118,59 +118,32 @@ export default function InspirationPage() {
           setCurrentSessionId(sessionId); // Store session ID in context
           console.log('✅ Set', recommendations.length, 'recommendations in context with session ID:', sessionId);
 
-          // Save to Firebase if user is authenticated
+          // Save to Firebase (don't block on this - recommendations are already in context)
           if (user) {
-            console.log('💾 Saving activities to Firebase...');
-            await saveWebhookActivities(recommendations, user.uid, sessionId);
-            console.log('✅ Activities saved to Firebase');
+            console.log('💾 Saving activities to Firebase (async)...');
+            saveWebhookActivities(recommendations, user.uid, sessionId)
+              .then(() => console.log('✅ Activities saved to Firebase'))
+              .catch((err) => console.error('⚠️ Firebase save failed (non-blocking):', err));
           } else {
             console.log('⚠️ User not authenticated, skipping Firebase save');
           }
 
-          console.log('✅ Webhook integration successful');
+          console.log('✅ Webhook integration successful - recommendations in context');
 
           // ThinkingScreen component will handle navigation after 30 seconds
           return;
 
         } catch (webhookError) {
-          console.error('Webhook failed, falling back to Firebase:', webhookError);
+          console.error('❌ Webhook failed:', webhookError);
           setShowThinkingScreen(false);
           setCurrentSessionId(null);
-          // Continue to Firebase fallback below
+          // Don't return - fall through to context recommendations fallback
         }
       }
-      
-      // Fallback: Check if API endpoint is configured
-      const apiEndpoint = process.env.NEXT_PUBLIC_RECOMMENDATIONS_API;
 
-      if (apiEndpoint && typeof apiEndpoint === 'string' && apiEndpoint.trim() !== '') {
-        // Make API call if endpoint is configured
-        console.log('Using API endpoint:', apiEndpoint);
-        const response = await fetch(apiEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch recommendations');
-        }
-
-        const data = await response.json();
-        setRecommendations(data);
-
-        // Navigate to recommendations page
-        router.push('/recommendations');
-      } else {
-        // Load suggested activities from Firebase
-        console.log('Loading suggested activities from Firebase...');
-        await loadSuggestedActivities();
-
-        // Navigate to recommendations page
-        router.push('/recommendations');
-      }
+      // Use context recommendations as fallback (from webhook or previous session)
+      console.log('📦 Using context recommendations as fallback');
+      router.push('/recommendations');
     } catch (err) {
       console.error('Error fetching recommendations:', err);
       setError('Unable to connect to recommendation service. Loading suggested activities instead...');
