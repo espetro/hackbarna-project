@@ -1,5 +1,4 @@
-import { distance } from '@turf/turf';
-import { point } from '@turf/helpers';
+import { distance, point } from '@turf/turf';
 import { ItineraryEvent, Recommendation } from './types';
 
 export interface TimeSlot {
