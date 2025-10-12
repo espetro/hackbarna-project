@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAuth } from '@/lib/context/AuthContext';
@@ -8,7 +8,7 @@ import ThinkingScreen from '@/components/ThinkingScreen';
 import { sendWebhookRequest, parseWebhookResponse, generateSessionId } from '@/lib/webhookService';
 import { saveWebhookActivities } from '@/lib/firebase/db';
 
-export default function ThinkingPage() {
+function ThinkingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -93,4 +93,12 @@ export default function ThinkingPage() {
   };
 
   return <ThinkingScreen onComplete={handleThinkingComplete} duration={30000} />;
+}
+
+export default function ThinkingPage() {
+  return (
+    <Suspense fallback={<ThinkingScreen onComplete={() => {}} duration={30000} />}>
+      <ThinkingPageContent />
+    </Suspense>
+  );
 }
