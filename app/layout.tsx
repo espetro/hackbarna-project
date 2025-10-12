@@ -22,7 +22,7 @@ export default function RootLayout({
     <LingoProvider loadDictionary={(_) => loadDictionary(_)}>
       <html lang="en">
         <body className={inter.className}>
-          <LocaleSwitcher locales={["es", "en"]} />
+          <LocaleSwitcher locales={["en", "es", "ca", "ru", "pt", "fr"]} />
           <AuthProvider>
             <AppProvider>{children}</AppProvider>
           </AuthProvider>
