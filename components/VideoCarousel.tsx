@@ -28,7 +28,7 @@ export type VideoItem = {
 };
 
 type Props = {
-  items: [VideoItem, VideoItem, VideoItem]; // exactly three
+  items: VideoItem[]; // array of video items
   autoAdvanceDelayMs?: number; // default: 1000 (1s after 'ended')
   transitionMs?: number; // default: 350 (smooth but snappy)
   className?: string;
@@ -47,10 +47,10 @@ export default function VideoCarousel({
   showControls = true,
   onSlideChange,
   onComplete,
-}: Props): JSX.Element {
+}: Props): React.ReactElement {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([null, null, null]);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>(Array(items.length).fill(null));
   const autoAdvanceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const announceRef = useRef<HTMLDivElement>(null);
@@ -72,7 +72,7 @@ export default function VideoCarousel({
       setActiveIndex(index);
       // Announce to screen readers
       if (announceRef.current) {
-        announceRef.current.textContent = `Slide ${index + 1} of 3: ${items[index].caption}`;
+        announceRef.current.textContent = `Slide ${index + 1} of ${items.length}: ${items[index].caption}`;
       }
       // Notify parent of slide change
       if (onSlideChange) {
@@ -85,7 +85,7 @@ export default function VideoCarousel({
   // Navigate to next slide
   const next = useCallback(() => {
     const nextIndex = activeIndex + 1;
-    if (nextIndex >= 3) {
+    if (nextIndex >= items.length) {
       // At the last slide, trigger onComplete if provided
       if (onComplete) {
         onComplete();
@@ -96,12 +96,12 @@ export default function VideoCarousel({
     } else {
       goTo(nextIndex);
     }
-  }, [activeIndex, goTo, onComplete]);
+  }, [activeIndex, goTo, onComplete, items.length]);
 
   // Navigate to previous slide
   const prev = useCallback(() => {
-    goTo((activeIndex - 1 + 3) % 3);
-  }, [activeIndex, goTo]);
+    goTo((activeIndex - 1 + items.length) % items.length);
+  }, [activeIndex, goTo, items.length]);
 
   // Handle video ended event
   const handleVideoEnded = useCallback(() => {

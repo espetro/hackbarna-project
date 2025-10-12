@@ -19,7 +19,7 @@ export async function importCalendar(
     for (const event of events) {
       try {
         const validated = ItineraryItemSchema.parse({
-          ...event,
+          ...(event as Record<string, any>),
           isLocked: true, // Calendar imports are immutable
           source: 'google_calendar',
         });

@@ -197,7 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const events = await getItineraryEvents();
         if (events && events.length > 0) {
           // Deduplicate on load to clean up any existing duplicates
-          const dedupedEvents = events.filter((event, index, arr) => 
+          const dedupedEvents = events.filter((event: ItineraryEvent, index: number, arr: ItineraryEvent[]) =>
             arr.findIndex(e => e.id === event.id) === index
           );
           

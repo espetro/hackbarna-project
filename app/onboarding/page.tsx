@@ -23,7 +23,7 @@ const onboardingSteps = [
     caption: 'Use TetrisTravel to slip in local-like experiences.',
     poster: '/assets/camp nou.png',
   },
-] as const;
+];
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);

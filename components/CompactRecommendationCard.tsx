@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import type { Recommendation } from '@/lib/context/AppContext';
+import type { Recommendation } from '@/lib/types';
 
 interface CompactRecommendationCardProps {
   recommendation: Recommendation;
@@ -19,7 +19,7 @@ export default function CompactRecommendationCard({
         {/* Small Image */}
         <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
           <Image
-            src={recommendation.imageUrl || '/assets/barceloneta.png'}
+            src={recommendation.image || '/assets/barceloneta.png'}
             alt={recommendation.title}
             fill
             className="object-cover"
