@@ -15,14 +15,15 @@ interface MapViewProps {
   onItineraryMarkerClick?: (event: ItineraryEvent) => void;
 }
 
-export default function MapView({ 
-  recommendations, 
-  selectedId, 
+export default function MapView({
+  recommendations,
+  selectedId,
   onMarkerClick,
   itineraryEvents = [],
-  onItineraryMarkerClick 
+  onItineraryMarkerClick
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
+  const hasCentered = useRef(false); // Track if we've already centered once
 
   // Default to Paris coordinates
   const [viewState, setViewState] = useState({
@@ -99,9 +100,10 @@ export default function MapView({
     }
   }, [recommendations, itineraryEvents]);
 
-  // Auto-zoom to first recommendation when recommendations change
+  // Auto-zoom to first recommendation ONCE when recommendations first load
   useEffect(() => {
-    if (validRecommendations.length > 0 && mapRef.current) {
+    // Only center if we haven't already and we have recommendations
+    if (validRecommendations.length > 0 && mapRef.current && !hasCentered.current) {
       const firstResult = validRecommendations[0];
       const map = mapRef.current.getMap();
 
@@ -118,7 +120,7 @@ export default function MapView({
       // Adjust latitude 20% up (add to latitude to move view up)
       const adjustedLat = firstResult.location.lat + latOffsetDegrees;
 
-      console.log('📍 Centering map on first result:', firstResult.title,
+      console.log('📍 Centering map on first result (one-time):', firstResult.title,
         'at', firstResult.location.lat, firstResult.location.lng,
         'adjusted to', adjustedLat);
 
@@ -129,6 +131,9 @@ export default function MapView({
         duration: 2000, // 2 seconds smooth animation
         easing: (t) => t * (2 - t) // Ease out quadratic for smooth deceleration
       });
+
+      // Mark as centered so we don't do this again
+      hasCentered.current = true;
     }
   }, [validRecommendations]);
 
