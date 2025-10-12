@@ -20,6 +20,12 @@ export default function SmartSuggestionCard({
   const { activity, slot, distanceToClosest, closestActivity, suggestedStartTime, suggestedEndTime } = suggestion;
   const [imageError, setImageError] = React.useState(false);
 
+  // Safety check: If activity is undefined, don't render the card
+  if (!activity) {
+    console.warn('⚠️ SmartSuggestionCard received undefined activity');
+    return null;
+  }
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',

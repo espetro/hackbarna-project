@@ -28,7 +28,9 @@ export default function SmartSuggestionsPanel({
 
     slots.forEach((slot, index) => {
       const slotKey = `slot-${index}`;
-      const slotSuggestions = smartSuggestions.filter(s => 
+      const slotSuggestions = smartSuggestions.filter(s =>
+        // Filter out suggestions with undefined activities (safety check)
+        s.activity &&
         s.slot.startTime.getTime() === slot.startTime.getTime() &&
         s.slot.endTime.getTime() === slot.endTime.getTime()
       );

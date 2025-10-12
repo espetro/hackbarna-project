@@ -403,11 +403,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Add a smart suggestion to the itinerary
   const addSmartSuggestion = useCallback((suggestion: SmartSuggestion) => {
+    // Safety check: If activity is undefined, don't add
+    if (!suggestion || !suggestion.activity) {
+      console.error('❌ Cannot add smart suggestion: activity is undefined');
+      return;
+    }
+
     console.log('🧠 Adding smart suggestion to itinerary:', suggestion.activity.title);
-    
+
     // Generate a truly unique ID with random component to avoid collisions
     const uniqueId = `smart-${suggestion.activity.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const itineraryEvent: ItineraryEvent = {
       id: uniqueId,
       title: suggestion.activity.title,
@@ -423,7 +429,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       recommendationId: suggestion.activity.id,
       image: suggestion.activity.image,
     };
-    
+
     addItineraryEvent(itineraryEvent);
   }, [addItineraryEvent]);
 
