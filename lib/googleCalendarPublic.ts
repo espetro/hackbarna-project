@@ -31,9 +31,14 @@ export function parseCalendarUrl(url: string): { type: 'ical' | 'api'; value: st
     }
 
     // Handle embed URLs like /calendar/embed?src=...
+    // Convert to iCal format automatically
     const src = urlObj.searchParams.get('src');
     if (src) {
-      return { type: 'api', value: decodeURIComponent(src) };
+      const calendarId = decodeURIComponent(src);
+      // Construct the iCal URL for public calendars
+      const icalUrl = `https://calendar.google.com/calendar/ical/${encodeURIComponent(calendarId)}/public/basic.ics`;
+      console.log('🔄 Converting embed URL to iCal:', icalUrl);
+      return { type: 'ical', value: icalUrl };
     }
 
     // Handle /calendar/u/0/r?cid= format
