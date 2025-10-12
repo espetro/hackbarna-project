@@ -27,7 +27,7 @@ export async function importCalendar(
       } catch (error) {
         // Skip invalid events but collect errors
         if (error instanceof z.ZodError) {
-          errors.push(`Invalid event: ${error.errors[0].message}`);
+          errors.push(`Invalid event: ${error.issues[0].message}`);
         }
       }
     }

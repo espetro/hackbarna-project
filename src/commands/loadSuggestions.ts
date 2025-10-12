@@ -43,7 +43,7 @@ export async function loadSuggestions(
       } catch (error) {
         // Skip invalid activities but collect errors
         if (error instanceof z.ZodError) {
-          errors.push(`Invalid activity: ${error.errors[0].message}`);
+          errors.push(`Invalid activity: ${error.issues[0].message}`);
         }
       }
     }

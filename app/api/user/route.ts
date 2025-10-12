@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid user data', details: error.errors },
+        { error: 'Invalid user data', details: error.issues },
         { status: 400 }
       );
     }
@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid preferences', details: error.errors },
+        { error: 'Invalid preferences', details: error.issues },
         { status: 400 }
       );
     }
