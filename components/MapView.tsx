@@ -141,29 +141,7 @@ export default function MapView({
     }
   }, [validRecommendations]);
 
-  // Auto-fit camera to show all itinerary points when itinerary changes
-  useEffect(() => {
-    if (validItineraryEvents.length > 0 && mapRef.current) {
-      const map = mapRef.current.getMap();
-
-      // Calculate bounds to fit all itinerary points
-      const coordinates = validItineraryEvents.map(event => [event.location.lng, event.location.lat]);
-
-      // Create a bounds object
-      const bounds = coordinates.reduce((bounds, coord) => {
-        return bounds.extend(coord as [number, number]);
-      }, new mapboxgl.LngLatBounds(coordinates[0] as [number, number], coordinates[0] as [number, number]));
-
-      // Fit map to bounds with padding
-      map.fitBounds(bounds, {
-        padding: { top: 100, bottom: 100, left: 100, right: 100 },
-        duration: 1000,
-        maxZoom: 14
-      });
-
-      console.log('📍 Fitting camera to', validItineraryEvents.length, 'itinerary points');
-    }
-  }, [validItineraryEvents]);
+  // Removed auto-fit camera - was causing unwanted zoom changes when adding items to itinerary
 
   // State to track animated path drawing progress
   const [pathProgress, setPathProgress] = useState(0);

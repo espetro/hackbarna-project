@@ -108,24 +108,25 @@ export default function RecommendationsPage() {
     };
 
     addItineraryEvent(itineraryEvent);
-    
+
     // Show success feedback with enhanced animation
     setToastMessage(rec.title);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 4000);
 
-    // Auto-swipe to next card after 1 second
-    // Use availableRecommendations since the current one will be filtered out
+    // Calculate the new available count after this item is added
+    // availableRecommendations will be filtered to exclude the one we just added
+    const newAvailableCount = availableRecommendations.length - 1;
+
+    // Auto-swipe to next card after 500ms (reduced from 1s for better UX)
     setTimeout(() => {
-      if (availableRecommendations.length > 1) {
-        // If there are still cards left, stay at current index or wrap
-        const nextIndex = currentIndex >= availableRecommendations.length - 1 ? 0 : currentIndex;
-        setCurrentIndex(nextIndex);
-      } else if (availableRecommendations.length === 1) {
-        // This was the last card - redirect to inspiration
-        router.push('/inspiration');
+      if (newAvailableCount > 0) {
+        // If there are still cards left after this one is added, move to next
+        // Keep the same index since the current card will be removed from the array
+        setCurrentIndex(Math.min(currentIndex, newAvailableCount - 1));
       }
-    }, 1000);
+      // If newAvailableCount === 0, the component will show "All Activities Added" screen
+    }, 500);
   };
 
   // Open calendar import modal
