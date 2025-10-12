@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { AppProvider } from "@/lib/context/AppContext";
-import { LingoProvider, loadDictionary } from "lingo.dev/react/rsc";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,11 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <LingoProvider loadDictionary={(locale) => loadDictionary(locale)}>
-          <AuthProvider>
-            <AppProvider>{children}</AppProvider>
-          </AuthProvider>
-        </LingoProvider>
+        <AuthProvider>
+          <AppProvider>{children}</AppProvider>
+        </AuthProvider>
       </body>
     </html>
   );
