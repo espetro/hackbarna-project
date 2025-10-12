@@ -9,7 +9,7 @@ interface LogoProps {
 export default function Logo({ className = '', width = 120, height = 40 }: LogoProps) {
   return (
     <Image
-      src="/assets/logo.svg"
+      src="/assets/logo.png"
       alt="TetrisTravel Logo"
       width={width}
       height={height}
