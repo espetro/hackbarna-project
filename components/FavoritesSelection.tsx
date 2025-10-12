@@ -67,9 +67,9 @@ export function FavoritesSelection({ attractions, onComplete }: FavoritesSelecti
         )}
       </AnimatePresence>
 
-      <div className="w-full max-w-5xl relative pb-32">
-        {/* Grid of attraction cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="w-full max-w-5xl h-full flex flex-col">
+        {/* Grid of attraction cards - Fits within viewport */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 pb-24">
           {attractions.map((attraction, index) => {
             const isSelected = selectedIds.includes(attraction.id);
 

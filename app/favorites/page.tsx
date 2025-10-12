@@ -75,20 +75,20 @@ export default function FavoritesPage() {
       >
         <div className="max-w-6xl mx-auto w-full flex flex-col h-full">
           {/* Clean header matching app style */}
-          <div className="text-center py-8 flex-shrink-0">
+          <div className="text-center py-4 flex-shrink-0">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white"
+              className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white"
             >
               Movie tastes?
             </motion.h1>
           </div>
 
-          {/* Favorites Selection Component - Scrollable content */}
-          <div className="flex-1 overflow-y-auto pb-8">
-            <div className="flex justify-center">
+          {/* Favorites Selection Component - Fits viewport */}
+          <div className="flex-1 overflow-hidden pb-4">
+            <div className="flex justify-center h-full">
               <FavoritesSelection attractions={allAttractions} onComplete={handleComplete} />
             </div>
           </div>
