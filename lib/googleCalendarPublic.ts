@@ -339,10 +339,12 @@ export async function importFromCalendarUrl(calendarUrl: string): Promise<Itiner
   }
 
   if (parsed.type === 'ical') {
-    console.log('Using iCal format (no API key required)');
+    console.log('✅ Using iCal format (no API key required)');
+    console.log('📥 Fetching from:', parsed.value);
     return await fetchICalEvents(parsed.value);
   } else {
-    console.log('Extracted calendar ID:', parsed.value);
+    console.log('⚠️ Using Google Calendar API (requires API key or public calendar)');
+    console.log('📥 Fetching calendar ID:', parsed.value);
     return await fetchPublicCalendarEvents(parsed.value);
   }
 }
