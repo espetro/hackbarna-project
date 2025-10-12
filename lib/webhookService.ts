@@ -143,13 +143,30 @@ export function parseWebhookResponse(webhookResponse: any, sessionId: string): R
             ? `${durationMinutes} minutes`
             : `${durationHours.toFixed(1)} hours`;
 
+          // Validate and normalize image URL
+          let imageUrl = '/assets/placeholder.jpg';
+          if (station.image && typeof station.image === 'string') {
+            const img = station.image.trim();
+            // Check if it's a valid HTTP/HTTPS URL and not a transport type
+            if (img.startsWith('http://') || img.startsWith('https://')) {
+              if (img !== 'taxi' && img !== 'walking') {
+                imageUrl = img;
+                console.log(`✅ Valid image URL for "${station.title}":`, imageUrl);
+              } else {
+                console.log(`⚠️ Skipping transport image for "${station.title}":`, img);
+              }
+            } else {
+              console.log(`⚠️ Invalid image URL for "${station.title}":`, img);
+            }
+          } else {
+            console.log(`📷 No image provided for "${station.title}", using placeholder`);
+          }
+
           recommendations.push({
             id,
             title: station.title,
             description: station.description,
-            image: station.image && station.image !== 'taxi' && station.image !== 'walking' && station.image.startsWith('http')
-              ? station.image
-              : '/assets/placeholder.jpg',
+            image: imageUrl,
             location: {
               lat,
               lng,
@@ -208,13 +225,23 @@ export function parseWebhookResponse(webhookResponse: any, sessionId: string): R
                 ? `${durationMinutes} minutes`
                 : `${durationHours.toFixed(1)} hours`;
 
+              // Validate and normalize image URL
+              let imageUrl = '/assets/placeholder.jpg';
+              if (station.image && typeof station.image === 'string') {
+                const img = station.image.trim();
+                // Check if it's a valid HTTP/HTTPS URL and not a transport type
+                if (img.startsWith('http://') || img.startsWith('https://')) {
+                  if (img !== 'taxi' && img !== 'walking') {
+                    imageUrl = img;
+                  }
+                }
+              }
+
               recommendations.push({
                 id,
                 title: station.title,
                 description: station.description,
-                image: station.image && station.image !== 'taxi' && station.image !== 'walking' && station.image.startsWith('http')
-                  ? station.image
-                  : '/assets/placeholder.jpg',
+                image: imageUrl,
                 location: {
                   lat,
                   lng,
@@ -312,11 +339,21 @@ function parseLegacyFormat(webhookResponse: any, sessionId: string): Recommendat
         });
       }
 
+      // Validate and normalize image URL
+      let imageUrl = '/assets/placeholder.jpg';
+      if (activity.image && typeof activity.image === 'string') {
+        const img = activity.image.trim();
+        // Check if it's a valid HTTP/HTTPS URL
+        if (img.startsWith('http://') || img.startsWith('https://')) {
+          imageUrl = img;
+        }
+      }
+
       return {
         id,
         title: activity.title,
         description: activity.description,
-        image: activity.image || '/assets/placeholder.jpg',
+        image: imageUrl,
         location: {
           lat,
           lng,
