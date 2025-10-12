@@ -179,8 +179,9 @@ export default function InspirationPage() {
 
   // Handle completion of thinking screen
   const handleThinkingComplete = () => {
-    // Navigate directly to recommendations page
-    // Don't set showThinkingScreen to false first as it may cause navigation issues
+    console.log('🎬 Thinking screen complete, navigating to recommendations...');
+    // Hide thinking screen and navigate
+    setShowThinkingScreen(false);
     router.push('/recommendations');
   };
 
