@@ -32,7 +32,7 @@ export default function LoginPage() {
 
       // For demo purposes, accept any email/password combination
       console.log("Logging in with:", email);
-      router.push("/favorites");
+      router.push("/onboarding");
     } catch (err: any) {
       console.error("Login error:", err);
       setError("Login failed. Please try again.");
