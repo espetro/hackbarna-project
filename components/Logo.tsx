@@ -10,13 +10,13 @@ const altText = "TetrisTravel Logo";
 
 export default function Logo({
   className = "",
-  width = 120,
-  height = 40,
+  width = 180,
+  height = 60,
 }: LogoProps) {
   return (
     <Image
-      src="/assets/logo.svg"
-      alt={altText} // alt text as a constant outside JSX
+      src="/assets/logo.png"
+      alt={altText}
       width={width}
       height={height}
       className={className}
