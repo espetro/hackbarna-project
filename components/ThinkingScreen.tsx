@@ -111,7 +111,7 @@ export default function ThinkingScreen({ onComplete, duration = 30000 }: Thinkin
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="mb-8 flex justify-center"
         >
-          <Logo width={120} height={40} />
+          <Logo width={180} height={60} />
         </motion.div>
 
         {/* Thinking animation */}
