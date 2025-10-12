@@ -7,23 +7,18 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Only apply Lingo.dev compiler if GOOGLE_API_KEY is available
-// This allows builds to succeed in environments without the API key
-const hasGoogleApiKey = process.env.GOOGLE_API_KEY && process.env.GOOGLE_API_KEY.trim() !== '';
+// Note: Lingo.dev compiler has been temporarily disabled to allow builds without GOOGLE_API_KEY
+// To re-enable translations:
+// 1. Add GOOGLE_API_KEY environment variable
+// 2. Uncomment the Lingo.dev configuration below
+//
+// import lingoCompiler from "lingo.dev/compiler";
+// export default lingoCompiler.next({
+//   sourceLocale: "en",
+//   targetLocales: ["es", "fr", "de"],
+//   models: {
+//     "*:*": "google:gemini-2.0-flash",
+//   },
+// })(nextConfig);
 
-// Dynamically import and apply Lingo.dev compiler only if API key is present
-// This prevents the compiler from being loaded when the key is not available
-let config = nextConfig;
-
-if (hasGoogleApiKey) {
-  const lingoCompiler = require("lingo.dev/compiler").default;
-  config = lingoCompiler.next({
-    sourceLocale: "en",
-    targetLocales: ["es", "fr", "de"],
-    models: {
-      "*:*": "google:gemini-2.0-flash",
-    },
-  })(nextConfig);
-}
-
-export default config;
+export default nextConfig;
