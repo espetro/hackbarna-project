@@ -2,25 +2,19 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { useAppContext } from '@/lib/context/AppContext';
 import { useAuth } from '@/lib/context/AuthContext';
-import { mockRecommendations } from '@/lib/mockData';
 import Logo from '@/components/Logo';
 import { BackgroundLines } from '@/components/BackgroundLines';
-import ThinkingScreen from '@/components/ThinkingScreen';
-import { sendWebhookRequest, parseWebhookResponse, generateSessionId } from '@/lib/webhookService';
-import { saveWebhookActivities } from '@/lib/firebase/db';
 import { motion } from 'framer-motion';
 
 export default function InspirationPage() {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showThinkingScreen, setShowThinkingScreen] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
-  const { setRecommendations, setUserQuery, loadSuggestedActivities, suggestedActivitiesLoading, favoriteAttractions, setCurrentSessionId } = useAppContext();
+  const { setUserQuery, loadSuggestedActivities, suggestedActivitiesLoading } = useAppContext();
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,119 +27,31 @@ export default function InspirationPage() {
     }
 
     setError('');
-    setIsLoading(true);
     setUserQuery(query);
 
-    try {
-      // Check if webhook is configured
-      const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK;
+    // Check if webhook is configured
+    const webhookUrl = process.env.NEXT_PUBLIC_WEBHOOK;
 
-      if (webhookUrl && typeof webhookUrl === 'string' && webhookUrl.trim() !== '') {
-        // Use webhook integration
-        console.log('Using webhook integration...');
-
-        // Generate session ID for tracking
-        const sessionId = generateSessionId();
-        setCurrentSessionId(sessionId);
-
-        // Format favorite movies for the request
-        const favoriteMovieNames = favoriteAttractions.map(attr => attr.alt);
-        console.log('📽️ User favorite movies:', favoriteMovieNames);
-
-        // Show thinking screen and make webhook call
-        setShowThinkingScreen(true);
-        setIsLoading(false); // Not loading anymore, now thinking
-
-        try {
-          // Clear existing recommendations before webhook call
-          console.log('🗑️ Clearing existing recommendations');
-          setRecommendations([]);
-
-          // Make webhook request
-          console.log('📞 Calling webhook with session:', sessionId);
-          console.log('📽️ Including favorite movies:', favoriteMovieNames);
-          const webhookResponse = await sendWebhookRequest(query, favoriteMovieNames);
-
-          // Parse response and set recommendations
-          console.log('📋 Parsing webhook response...');
-          const recommendations = parseWebhookResponse(webhookResponse, sessionId);
-
-          if (recommendations.length === 0) {
-            throw new Error('No valid activities received from webhook');
-          }
-
-          setRecommendations(recommendations);
-          setCurrentSessionId(sessionId); // Store session ID in context
-          console.log('✅ Set', recommendations.length, 'recommendations in context with session ID:', sessionId);
-
-          // Save to Firebase (don't block on this - recommendations are already in context)
-          if (user) {
-            console.log('💾 Saving activities to Firebase (async)...');
-            saveWebhookActivities(recommendations, user.uid, sessionId)
-              .then(() => console.log('✅ Activities saved to Firebase'))
-              .catch((err) => console.error('⚠️ Firebase save failed (non-blocking):', err));
-          } else {
-            console.log('⚠️ User not authenticated, skipping Firebase save');
-          }
-
-          console.log('✅ Webhook integration successful - recommendations in context');
-
-          // ThinkingScreen will continue showing for 30 seconds, then navigate
-          // The return here keeps the thinking screen visible
-          return;
-
-        } catch (webhookError) {
-          console.error('❌ Webhook failed:', webhookError);
-          setShowThinkingScreen(false);
-          setCurrentSessionId(null);
-          // Don't return - fall through to context recommendations fallback
-        }
-      }
-
-      // Use context recommendations as fallback (from webhook or previous session)
-      console.log('📦 Using context recommendations as fallback');
-      router.push('/recommendations');
-    } catch (err) {
-      console.error('Error fetching recommendations:', err);
-      setError('Unable to connect to recommendation service. Loading suggested activities instead...');
-
-      // Fallback to Firebase suggested activities
-      console.log('API call failed, trying Firebase suggested activities...');
+    if (webhookUrl && typeof webhookUrl === 'string' && webhookUrl.trim() !== '') {
+      // Use webhook integration - navigate to thinking page
+      console.log('Using webhook integration - navigating to thinking page...');
+      router.push(`/thinking?query=${encodeURIComponent(query)}`);
+    } else {
+      // No webhook - try Firebase fallback
+      setIsLoading(true);
       try {
+        console.log('No webhook configured, trying Firebase suggested activities...');
         await loadSuggestedActivities();
-        setError(''); // Clear error if Firebase works
+        setError('');
         router.push('/recommendations');
-      } catch (fbErr) {
-        console.error('Firebase also failed:', fbErr);
-        console.log('Using mock data as final fallback');
-        
-        try {
-          const { mockRecommendations } = await import('@/lib/mockData');
-          setRecommendations(mockRecommendations);
-          setError(''); // Clear error if mock data works
-          router.push('/recommendations');
-        } catch (mockErr) {
-          console.error('Even mock data failed:', mockErr);
-          setError('Unable to load recommendations. Please try again.');
-        }
+      } catch (err) {
+        console.error('Firebase also failed:', err);
+        setError('Unable to load recommendations. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
     }
   };
-
-  // Handle completion of thinking screen
-  const handleThinkingComplete = () => {
-    console.log('🎬 Thinking screen complete, navigating to recommendations...');
-    // Hide thinking screen and navigate
-    setShowThinkingScreen(false);
-    router.push('/recommendations');
-  };
-
-  // Show thinking screen if webhook is processing
-  if (showThinkingScreen) {
-    return <ThinkingScreen onComplete={handleThinkingComplete} duration={30000} />;
-  }
 
   return (
     <BackgroundLines>
