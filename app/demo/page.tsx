@@ -25,7 +25,7 @@ const items = [
     caption: 'Waves under moonlight - Coastal serenity at its finest',
     poster: '/assets/camp nou.png',
   },
-] as const;
+];
 
 export default function DemoPage() {
   return (
