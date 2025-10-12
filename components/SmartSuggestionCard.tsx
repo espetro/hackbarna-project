@@ -18,6 +18,7 @@ export default function SmartSuggestionCard({
   onExpand,
 }: SmartSuggestionCardProps) {
   const { activity, slot, distanceToClosest, closestActivity, suggestedStartTime, suggestedEndTime } = suggestion;
+  const [imageError, setImageError] = React.useState(false);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
@@ -46,16 +47,14 @@ export default function SmartSuggestionCard({
       <div className="flex items-start gap-3 mt-2">
         {/* Activity Image */}
         <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700">
-          {activity.image ? (
+          {activity.image && !imageError ? (
             <Image
               src={activity.image}
               alt={activity.title}
               fill
               className="object-cover"
               sizes="64px"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

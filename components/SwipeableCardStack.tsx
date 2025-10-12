@@ -25,6 +25,7 @@ export default function SwipeableCardStack({
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-15, 15]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0.5, 1, 1, 1, 0.5]);
+  const [imageError, setImageError] = React.useState(false);
 
   const handleDragEnd = (event: any, info: PanInfo) => {
     const threshold = 100;
@@ -46,6 +47,11 @@ export default function SwipeableCardStack({
   };
 
   const currentRec = recommendations[currentIndex];
+
+  // Reset image error state when card changes
+  React.useEffect(() => {
+    setImageError(false);
+  }, [currentIndex]);
 
   return (
     <div className="fixed bottom-10 md:bottom-12 left-1/2 transform -translate-x-1/2 w-full max-w-sm px-4 z-30">
@@ -73,17 +79,14 @@ export default function SwipeableCardStack({
               className="relative h-32 md:h-40 flex-shrink-0 cursor-grab active:cursor-grabbing bg-gray-200 dark:bg-gray-700"
               onClick={() => onCardClick(currentRec)}
             >
-              {currentRec.image ? (
+              {currentRec.image && !imageError ? (
                 <Image
                   src={currentRec.image}
                   alt={currentRec.title}
                   fill
                   className="object-cover"
                   sizes="400px"
-                  onError={(e) => {
-                    // Fallback to placeholder on error
-                    e.currentTarget.style.display = 'none';
-                  }}
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

@@ -13,21 +13,21 @@ export default function CompactRecommendationCard({
   onBook,
   isExpanded = false,
 }: CompactRecommendationCardProps) {
+  const [imageError, setImageError] = React.useState(false);
+
   return (
     <div className="bg-white/90 dark:bg-black/90 backdrop-blur-md rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
       <div className="flex items-center gap-3 p-3">
         {/* Small Image */}
         <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-gray-700">
-          {recommendation.image ? (
+          {recommendation.image && !imageError ? (
             <Image
               src={recommendation.image}
               alt={recommendation.title}
               fill
               className="object-cover"
               sizes="64px"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

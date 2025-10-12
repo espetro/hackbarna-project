@@ -17,6 +17,8 @@ export default function RecommendationCard({
   onSelect,
   onBook,
 }: RecommendationCardProps) {
+  const [imageError, setImageError] = React.useState(false);
+
   return (
     <div
       className={`bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 cursor-pointer ${
@@ -26,16 +28,14 @@ export default function RecommendationCard({
     >
       {/* Image */}
       <div className="relative h-48 w-full bg-gray-200 dark:bg-gray-700">
-        {recommendation.image ? (
+        {recommendation.image && !imageError ? (
           <Image
             src={recommendation.image}
             alt={recommendation.title}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

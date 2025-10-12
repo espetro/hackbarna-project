@@ -13,6 +13,7 @@ interface GapRecommendationCardProps {
 export default function GapRecommendationCard({ fit, onAdd }: GapRecommendationCardProps) {
   const { recommendation, fitScore, durationFit, suggestedStartTime, suggestedEndTime, distanceFromPrevious, distanceFromNext } = fit;
   const { label, badgeColor } = formatDurationFit(durationFit);
+  const [imageError, setImageError] = React.useState(false);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
@@ -36,16 +37,14 @@ export default function GapRecommendationCard({ fit, onAdd }: GapRecommendationC
     >
       {/* Image */}
       <div className="relative h-32 w-full bg-gray-200 dark:bg-gray-700">
-        {recommendation.image ? (
+        {recommendation.image && !imageError ? (
           <Image
             src={recommendation.image}
             alt={recommendation.title}
             fill
             className="object-cover"
             sizes="224px"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
