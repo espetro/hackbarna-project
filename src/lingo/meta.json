@@ -1,0 +1,865 @@
+{
+  "version": 0.1,
+  "files": {
+    "../app/confirmation/page.tsx": {
+      "scopes": {
+        "4/declaration/body/7/argument/1/11/1": {
+          "type": "element",
+          "hash": "57adb01a6fadc65f7ab60a50287bd0e8",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "View More Recommendations"
+        },
+        "4/declaration/body/7/argument/1/11/3": {
+          "type": "element",
+          "hash": "15994fdac3f9b4696ad1c184fd91b35e",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Start New Search"
+        },
+        "4/declaration/body/7/argument/1/3/3": {
+          "type": "element",
+          "hash": "de0ef6c9fefbf7a1fc0578388038ab29",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Booking Confirmed!"
+        },
+        "4/declaration/body/7/argument/1/3/5": {
+          "type": "element",
+          "hash": "3d9bb50cbcac60db432a677b080881a1",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Your experience has been added to your itinerary"
+        },
+        "4/declaration/body/7/argument/1/7/7/11": {
+          "type": "element",
+          "hash": "0fba38848c76a4278e268a9b85951f86",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:svg><element:path></element:path></element:svg> Add to Google Calendar"
+        },
+        "4/declaration/body/7/argument/1/7/7/7/1/expression/right/1": {
+          "type": "element",
+          "hash": "bf6ed0974fdd4eb9d8bd3f4f8c4bd5ae",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Duration"
+        },
+        "4/declaration/body/7/argument/1/7/7/7/3/expression/right/1": {
+          "type": "element",
+          "hash": "6e3258d4cf5835177d174a5259a9cfd6",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Price"
+        },
+        "4/declaration/body/7/argument/1/7/7/7/5/1": {
+          "type": "element",
+          "hash": "4e1fcce15854d824919b4a582c697c90",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Status"
+        },
+        "4/declaration/body/7/argument/1/7/7/7/5/3": {
+          "type": "element",
+          "hash": "5a436ac41991ace475b1cd74044ecf2f",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:svg><element:path></element:path></element:svg> Confirmed"
+        }
+      }
+    },
+    "../app/demo/page.tsx": {
+      "scopes": {
+        "2/declaration/body/0/argument/1/1/1": {
+          "type": "element",
+          "hash": "c54c49cc5f3a53ce54b684be191aeadb",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Video Carousel Demo"
+        },
+        "2/declaration/body/0/argument/1/1/3": {
+          "type": "element",
+          "hash": "b9723106717bbf6a3cb8fd65d564b763",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Swipe, click arrows, or use keyboard (← →) to navigate"
+        },
+        "2/declaration/body/0/argument/1/5/1": {
+          "type": "element",
+          "hash": "8f231c4557f5181b45a1b51f618d433a",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Features Showcase"
+        },
+        "2/declaration/body/0/argument/1/5/3/1/1": {
+          "type": "element",
+          "hash": "c98e649bd9091a5238d8543d65e6c130",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "✓"
+        },
+        "2/declaration/body/0/argument/1/5/3/1/3": {
+          "type": "element",
+          "hash": "705321d25e2a28c5cb52f619c0900134",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:strong>Autoplay:</element:strong> Videos auto-advance 1 second after ending"
+        },
+        "2/declaration/body/0/argument/1/5/3/11/1": {
+          "type": "element",
+          "hash": "c98e649bd9091a5238d8543d65e6c130",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "✓"
+        },
+        "2/declaration/body/0/argument/1/5/3/11/3": {
+          "type": "element",
+          "hash": "4980be7480c51c2d1ce39569456d85b1",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:strong>Smooth Transitions:</element:strong> GPU-accelerated crossfade with subtle transform"
+        },
+        "2/declaration/body/0/argument/1/5/3/13/1": {
+          "type": "element",
+          "hash": "c98e649bd9091a5238d8543d65e6c130",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "✓"
+        },
+        "2/declaration/body/0/argument/1/5/3/13/3": {
+          "type": "element",
+          "hash": "a3183074d840d836c5ab2b1361a4c5b0",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:strong>Performance:</element:strong> Only active video plays, others paused to save CPU"
+        },
+        "2/declaration/body/0/argument/1/5/3/3/1": {
+          "type": "element",
+          "hash": "c98e649bd9091a5238d8543d65e6c130",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "✓"
+        },
+        "2/declaration/body/0/argument/1/5/3/3/3": {
+          "type": "element",
+          "hash": "e1bc5fe7da9f3446aac07b4b27c40870",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:strong>Keyboard Navigation:</element:strong> Use arrow keys (← →) to navigate between slides"
+        },
+        "2/declaration/body/0/argument/1/5/3/5/1": {
+          "type": "element",
+          "hash": "c98e649bd9091a5238d8543d65e6c130",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "✓"
+        },
+        "2/declaration/body/0/argument/1/5/3/5/3": {
+          "type": "element",
+          "hash": "c4adb87f7f12221bedb512769b601acd",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:strong>Mouse/Touch:</element:strong> Click prev/next buttons or pagination dots"
+        },
+        "2/declaration/body/0/argument/1/5/3/7/1": {
+          "type": "element",
+          "hash": "c98e649bd9091a5238d8543d65e6c130",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "✓"
+        },
+        "2/declaration/body/0/argument/1/5/3/7/3": {
+          "type": "element",
+          "hash": "20702a4723d0f205a9dd2226f7ce760f",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:strong>Visibility Aware:</element:strong> Pauses when tab is inactive or scrolled out of view"
+        },
+        "2/declaration/body/0/argument/1/5/3/9/1": {
+          "type": "element",
+          "hash": "c98e649bd9091a5238d8543d65e6c130",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "✓"
+        },
+        "2/declaration/body/0/argument/1/5/3/9/3": {
+          "type": "element",
+          "hash": "b959b75c84468eec7c007f3d10bdc18f",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:strong>Accessible:</element:strong> Full ARIA support, screen reader announcements, and keyboard focus management"
+        },
+        "2/declaration/body/0/argument/1/7/1": {
+          "type": "element",
+          "hash": "e9c343ab112460921290c79d3d0e3d65",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "← Back to Home"
+        }
+      }
+    },
+    "../app/favorites/page.tsx": {
+      "scopes": {
+        "6/declaration/body/3/argument/7/1/3/1": {
+          "type": "element",
+          "hash": "eee23d1ded6a35cc3d22075d464ac111",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Select Your Favorites"
+        }
+      }
+    },
+    "../app/inspiration/page.tsx": {
+      "scopes": {
+        "10/declaration/body/6/argument/1/1/3/3": {
+          "type": "element",
+          "hash": "4408680ca3bef38e9b6a726c2f32ca2d",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "What do u fancy and when can you make it?"
+        },
+        "10/declaration/body/6/argument/1/1/7/1/1/1-placeholder": {
+          "type": "attribute",
+          "hash": "906ead803556ec1650f01dff1e7f3f0a",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "e.g., I have 3 hours in Paris and I'd love a local foodie experience..."
+        },
+        "10/declaration/body/6/argument/1/1/7/1/5": {
+          "type": "element",
+          "hash": "2d81ebc3972c5a1f3d390be458af38dc",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Be specific about your location, time available, and interests for better recommendations"
+        }
+      }
+    },
+    "../app/login/page.tsx": {
+      "scopes": {
+        "5/declaration/body/6/argument/1/1/11/1/3/1": {
+          "type": "element",
+          "hash": "c603a64864a803174e8aeb2da54403ed",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Email address"
+        },
+        "5/declaration/body/6/argument/1/1/11/1/3/3-placeholder": {
+          "type": "attribute",
+          "hash": "3cbb854500cac63513492e7abbc5cff3",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "you@example.com"
+        },
+        "5/declaration/body/6/argument/1/1/11/1/5/1": {
+          "type": "element",
+          "hash": "fd3c6d49ee31ee2ccf24ce41582083b4",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Password"
+        },
+        "5/declaration/body/6/argument/1/1/11/1/5/3-placeholder": {
+          "type": "attribute",
+          "hash": "5ee7cd1a4a7fe6fb896e8a0c4b2d7255",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "••••••••"
+        },
+        "5/declaration/body/6/argument/1/1/11/1/7/1/expression/consequent": {
+          "type": "element",
+          "hash": "7d96c07d789b9e1888f55c8d86871e89",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:svg><element:circle></element:circle><element:path></element:path></element:svg> Signing in..."
+        },
+        "5/declaration/body/6/argument/1/1/7/1": {
+          "type": "element",
+          "hash": "824eab5b8d8d3fbda56c7a46c9e05275",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Welcome back"
+        },
+        "5/declaration/body/6/argument/1/1/7/3": {
+          "type": "element",
+          "hash": "877e09730a36c5169e17402c82af6f11",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Sign in to continue your journey"
+        }
+      }
+    },
+    "../app/recommendations/page.tsx": {
+      "scopes": {
+        "13/declaration/body/15/consequent/0/argument/1/3": {
+          "type": "element",
+          "hash": "540887e6fe4c994ac3354a1320166977",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Loading Suggested Activities"
+        },
+        "13/declaration/body/15/consequent/0/argument/1/5": {
+          "type": "element",
+          "hash": "d12e3243c99f1712694e48cd59ac108a",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Fetching activities from Firebase..."
+        },
+        "13/declaration/body/16/consequent/0/consequent/0/argument/1/3": {
+          "type": "element",
+          "hash": "6f7e769de07778b01dc66bafb81c33a3",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "All Activities Added!"
+        },
+        "13/declaration/body/16/consequent/0/consequent/0/argument/1/5": {
+          "type": "element",
+          "hash": "2ae4dcf9286a80a641c71fd0a97e8e76",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "You've added all suggested activities to your itinerary. Great job planning your trip!"
+        },
+        "13/declaration/body/16/consequent/0/consequent/0/argument/1/7/1": {
+          "type": "element",
+          "hash": "9ba4f98f52f87074a8683948e5eab629",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "View My Itinerary"
+        },
+        "13/declaration/body/16/consequent/0/consequent/0/argument/1/7/3": {
+          "type": "element",
+          "hash": "15ae1c413344b59683695e1e20fdb258",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Find More Activities"
+        },
+        "13/declaration/body/18/argument/19/1/expression/right/1/7/1": {
+          "type": "element",
+          "hash": "cdc1c07359ff68b6ea96b2fcc02c477f",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Added to Itinerary!"
+        },
+        "13/declaration/body/18/argument/23/1/expression/right/7/1/11/7/expression/right/3": {
+          "type": "element",
+          "hash": "3a274835db4bfc8675af409ff896fde0",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Lat: <function:expandedCard.location.lat.toFixed/>, Lng: <function:expandedCard.location.lng.toFixed/>"
+        },
+        "13/declaration/body/18/argument/23/1/expression/right/7/1/15/3": {
+          "type": "element",
+          "hash": "103869f027b8c09443c5b6bf4e50ba76",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:svg><element:path></element:path></element:svg> Add to Itinerary"
+        }
+      }
+    },
+    "../app/thank-you/page.tsx": {
+      "scopes": {
+        "4/declaration/body/4/argument/1/11/1/expression/consequent": {
+          "type": "element",
+          "hash": "449ca6cd714b71bb5ab86ffa153f1c42",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:span>{selectedRecommendation.title}</element:span> has been added to your itinerary"
+        },
+        "4/declaration/body/4/argument/1/15/expression/right/1/1/1": {
+          "type": "element",
+          "hash": "bf6ed0974fdd4eb9d8bd3f4f8c4bd5ae",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Duration"
+        },
+        "4/declaration/body/4/argument/1/15/expression/right/1/3/1": {
+          "type": "element",
+          "hash": "6e3258d4cf5835177d174a5259a9cfd6",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Price"
+        },
+        "4/declaration/body/4/argument/1/19": {
+          "type": "element",
+          "hash": "b7501af7a3efcfbbfd12da153ca65520",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Redirecting in <element:span>{countdown}</element:span> seconds..."
+        },
+        "4/declaration/body/4/argument/1/23/1": {
+          "type": "element",
+          "hash": "3079808b598c1f7bb31f03d738ba9a54",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Explore More"
+        },
+        "4/declaration/body/4/argument/1/23/3": {
+          "type": "element",
+          "hash": "8e87c4d32a02c7f49001ed119d4686df",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "View Recommendations"
+        },
+        "4/declaration/body/4/argument/1/7": {
+          "type": "element",
+          "hash": "574e7ba4b13f150105e9deab36d3e7a7",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "All Set!"
+        }
+      }
+    },
+    "../components/CalendarImportModal.tsx": {
+      "scopes": {
+        "3/declaration/body/5/argument/1/expression/right/7/1/3/1/1": {
+          "type": "element",
+          "hash": "2064f1f00fb867c7748f21d424db0f85",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Import Google Calendar"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/3/1/3": {
+          "type": "element",
+          "hash": "2a0c124925c45db06c3128d9934ed35c",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Enter a public Google Calendar URL to import events"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/1/1": {
+          "type": "element",
+          "hash": "79ec7023f14b2a2d477e1cdd72ee43ce",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Calendar URL"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/1/3-placeholder": {
+          "type": "attribute",
+          "hash": "9b0073e0a2b40d013cd002671de4162a",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Paste your Google Calendar URL here..."
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/13/1": {
+          "type": "element",
+          "hash": "643431b4a45271ffb02d2957be7884b3",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Cancel"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/13/3/1/expression/alternate": {
+          "type": "element",
+          "hash": "354b33286ed3583ea27472e78bbf7945",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:svg><element:path></element:path></element:svg> Import Calendar"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/13/3/1/expression/consequent": {
+          "type": "element",
+          "hash": "636a2e0d709f0c3d48db4e4d09a4eab2",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:svg><element:circle></element:circle><element:path></element:path></element:svg> Importing..."
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/9/1": {
+          "type": "element",
+          "hash": "8dac2ddf5876fae4f68e29dd7c037675",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "How to get your calendar URL:"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/9/3/1": {
+          "type": "element",
+          "hash": "f8520f02368e98c9077fd08a0b675f99",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "1. Open Google Calendar in your browser"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/9/3/11": {
+          "type": "element",
+          "hash": "ba443fa565757cd9a174e02f399bb8d7",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "6. Copy the calendar URL from your browser"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/9/3/3": {
+          "type": "element",
+          "hash": "d7c77741f5fe48668d889dec3d5e6e0f",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "2. Find the calendar you want to share"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/9/3/5": {
+          "type": "element",
+          "hash": "91536090a66806cce474a368ab79b3b3",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "3. Click the three dots next to it"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/9/3/7": {
+          "type": "element",
+          "hash": "ff10928b1479ad8fe6530c99cb0ab9d0",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "4. Select \"Settings and sharing\""
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/9/3/9": {
+          "type": "element",
+          "hash": "9edda52052e109d0f99780fb7bf9f428",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "5. Make the calendar public"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/9/5/1": {
+          "type": "element",
+          "hash": "593c4650c25fee780b6930765af512c1",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Example URL:"
+        },
+        "3/declaration/body/5/argument/1/expression/right/7/1/7/9/5/3": {
+          "type": "element",
+          "hash": "ec2f4e787a5516f507aa80f51d98c8d7",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<function:exampleUrl.substring/>..."
+        }
+      }
+    },
+    "../components/FavoritesSelection.tsx": {
+      "scopes": {
+        "5/declaration/body/4/argument/3/1/expression/right/1/3": {
+          "type": "element",
+          "hash": "460cc885ca64ddece0adcf30f49e48c5",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Preparing your preferences..."
+        },
+        "5/declaration/body/4/argument/5/11/1/expression/right/1/3/1": {
+          "type": "element",
+          "hash": "a2eecd04b78315f07e8f26be80602351",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "{selectedIds.length} <expression/> selected"
+        },
+        "5/declaration/body/4/argument/5/11/1/expression/right/1/7/3": {
+          "type": "element",
+          "hash": "3d31a7269cb7a48a9366340414b2e91d",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:svg><element:path></element:path></element:svg> Clear"
+        },
+        "5/declaration/body/4/argument/5/11/1/expression/right/1/7/7/1": {
+          "type": "element",
+          "hash": "3cfba90b4600131e82fc4260c568d044",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Continue"
+        },
+        "5/declaration/body/4/argument/5/7/expression/right": {
+          "type": "element",
+          "hash": "fd5926605d62cf657b21a734632638bd",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Select one or more activities to continue"
+        }
+      }
+    },
+    "../components/ItineraryMenu.tsx": {
+      "scopes": {
+        "3/declaration/body/0/argument/1/9": {
+          "type": "element",
+          "hash": "f7c2a975bffcafbde3c853991df8cf67",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Itinerary"
+        }
+      }
+    },
+    "../components/ItineraryPanel.tsx": {
+      "scopes": {
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/alternate/alternate/3/1/expression/0/body/3/argument/3/expression/right/1/1/3": {
+          "type": "element",
+          "hash": "8886440bc6f8176a4a9a84b55aebccea",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Add activity here"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/alternate/alternate/3/1/expression/0/body/3/argument/3/expression/right/1/3": {
+          "type": "element",
+          "hash": "d7b4e06e8f2aecbe0b6065a988d94740",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<function:Math.floor/>h <function:Math.floor/>m free"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/alternate/alternate/3/1/expression/0/body/3/argument/7/7/1/1/1/1/3/5/expression/right-aria-label": {
+          "type": "attribute",
+          "hash": "80d27a4373bc3bcde0f6a5e15d443a8a",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Remove event"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/alternate/alternate/3/5/expression/right/1/1/3": {
+          "type": "element",
+          "hash": "f6a8783377ffad29222b4d4242edee91",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Add activity here"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/alternate/alternate/3/5/expression/right/1/3": {
+          "type": "element",
+          "hash": "5d7b9307c9ad00d49340153de6d52150",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Evening slot"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/alternate/consequent/3": {
+          "type": "element",
+          "hash": "5b1662dc3df521e27088c2094d06f0d0",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "No events on this day"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/alternate/consequent/5": {
+          "type": "element",
+          "hash": "66847f553aa323f8e92a733771207ea8",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Select another date or add activities to this day"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/consequent/3": {
+          "type": "element",
+          "hash": "ebb3712fea8301992b5bda7647e36b16",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "No events yet"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/consequent/5": {
+          "type": "element",
+          "hash": "dce8731426f36360627ada233bbf8bf0",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Import from Google Calendar or add recommendations to start building your agenda"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/11/1/expression/consequent/7/3": {
+          "type": "element",
+          "hash": "45aebbbde1a4c1cc00828fd34c780734",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Import Google Calendar"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/7/1/1/1": {
+          "type": "element",
+          "hash": "24ec17e18fef2ac3680f66826f0032d3",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "My Agenda"
+        },
+        "6/declaration/body/16/argument/1/expression/right/7/1/7/1/3/5-aria-label": {
+          "type": "attribute",
+          "hash": "602e561f3312ab72d275668a8faa4af6",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Close itinerary"
+        }
+      }
+    },
+    "../components/Logo.tsx": {
+      "scopes": {
+        "2/declaration/body/0/argument-alt": {
+          "type": "attribute",
+          "hash": "37114efcdc4c142c35f31c1e6ce8abdf",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "TetrisTravel Logo"
+        }
+      }
+    },
+    "../components/MapView.tsx": {
+      "scopes": {
+        "7/declaration/body/10/consequent/0/argument/1/3": {
+          "type": "element",
+          "hash": "a6e94b66711bb3e315e6219cfdc14522",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Mapbox Token Required"
+        },
+        "7/declaration/body/10/consequent/0/argument/1/5": {
+          "type": "element",
+          "hash": "2b62536d313217f1fece4ad71d59f874",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "To display the map, please add your Mapbox access token to the .env.local file."
+        },
+        "7/declaration/body/10/consequent/0/argument/1/7": {
+          "type": "element",
+          "hash": "36c4b303b0a9d00c9a2b8fcb21aed663",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "NEXT_PUBLIC_MAPBOX_KEY=your_token_here"
+        },
+        "7/declaration/body/10/consequent/0/argument/1/9": {
+          "type": "element",
+          "hash": "3021252b15610bbecc356b2e5b45f27e",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Get your free token at <element:a>mapbox.com</element:a>"
+        }
+      }
+    },
+    "../components/SwipeableCardStack.tsx": {
+      "scopes": {
+        "5/declaration/body/5/argument/1/9/1/11/3/expression/right-title": {
+          "type": "attribute",
+          "hash": "e9dce917e1bfe440ff6e7641ea368675",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Add to Itinerary"
+        },
+        "5/declaration/body/5/argument/1/9/1/11/3/expression/right/3": {
+          "type": "element",
+          "hash": "e9dce917e1bfe440ff6e7641ea368675",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Add to Itinerary"
+        },
+        "5/declaration/body/5/argument/1/9/1/3/3": {
+          "type": "element",
+          "hash": "dadca4a110b9e607109ff92dd4f21c5a",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<expression/>/{recommendations.length}"
+        },
+        "5/declaration/body/5/argument/1/9/1/7/7": {
+          "type": "element",
+          "hash": "1fc2217dc030ea673842f137fd7fe729",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "<element:svg><element:path></element:path></element:svg> Swipe to explore"
+        }
+      }
+    },
+    "../components/VideoCarousel.tsx": {
+      "scopes": {
+        "3/declaration/body/20/argument-aria-label": {
+          "type": "attribute",
+          "hash": "ee3b8d97b0caf5ce83c1c9f117c63571",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Video carousel"
+        },
+        "3/declaration/body/20/argument/7/expression/right/1/1-aria-label": {
+          "type": "attribute",
+          "hash": "23328c6fe160a399086131987317f3ed",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Previous slide"
+        },
+        "3/declaration/body/20/argument/7/expression/right/1/3-aria-label": {
+          "type": "attribute",
+          "hash": "c76993309a88cf9f8a3a7fca7b5d7896",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Next slide"
+        }
+      }
+    }
+  }
+}
