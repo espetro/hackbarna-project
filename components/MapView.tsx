@@ -99,41 +99,38 @@ export default function MapView({
     }
   }, [recommendations, itineraryEvents]);
 
-  // Auto-zoom to fit all markers when recommendations or itinerary events change
+  // Auto-zoom to first recommendation when recommendations change
   useEffect(() => {
-    // Use only valid coordinates for map bounds
-    const allValidLocations = [
-      ...validRecommendations.map(r => ({ lng: r.location.lng, lat: r.location.lat })),
-      ...validItineraryEvents.map(e => ({ lng: e.location.lng, lat: e.location.lat }))
-    ];
+    if (validRecommendations.length > 0 && mapRef.current) {
+      const firstResult = validRecommendations[0];
+      const map = mapRef.current.getMap();
 
-    if (allValidLocations.length > 0 && mapRef.current) {
-      const bounds = allValidLocations.reduce(
-        (bounds, loc) => {
-          return bounds.extend([loc.lng, loc.lat]);
-        },
-        new mapboxgl.LngLatBounds(
-          [allValidLocations[0].lng, allValidLocations[0].lat],
-          [allValidLocations[0].lng, allValidLocations[0].lat]
-        )
-      );
+      // Get viewport height to calculate 20% offset
+      const viewportHeight = map.getContainer().clientHeight;
+      const latOffsetPixels = viewportHeight * 0.2; // 20% of viewport height
 
-      // Offset map center 20% above midpoint by adding more bottom padding
-      // This prevents cards from covering the markers and itinerary pins
-      const viewportHeight = mapRef.current.getMap().getContainer().clientHeight;
-      const offsetPadding = viewportHeight * 0.2; // 20% offset
-      
-      mapRef.current.fitBounds(bounds, {
-        padding: { 
-          top: 100, 
-          bottom: 100 + offsetPadding, // Extra padding at bottom to shift view up
-          left: 100, 
-          right: 100 
-        },
-        duration: 1000
+      // Convert pixel offset to latitude degrees (rough approximation)
+      // At zoom 12, 1 degree latitude ≈ 111km ≈ 256 pixels at equator
+      const zoom = 11; // Zoomed out a bit from default 12
+      const pixelsPerDegree = 256 * Math.pow(2, zoom) / 360;
+      const latOffsetDegrees = latOffsetPixels / pixelsPerDegree;
+
+      // Adjust latitude 20% up (add to latitude to move view up)
+      const adjustedLat = firstResult.location.lat + latOffsetDegrees;
+
+      console.log('📍 Centering map on first result:', firstResult.title,
+        'at', firstResult.location.lat, firstResult.location.lng,
+        'adjusted to', adjustedLat);
+
+      // Smoothly animate to the first result with 20% offset up
+      map.easeTo({
+        center: [firstResult.location.lng, adjustedLat],
+        zoom: zoom,
+        duration: 2000, // 2 seconds smooth animation
+        easing: (t) => t * (2 - t) // Ease out quadratic for smooth deceleration
       });
     }
-  }, [validRecommendations, validItineraryEvents]);
+  }, [validRecommendations]);
 
   // Itinerary hook - re-render when itinerary changes
   useEffect(() => {
