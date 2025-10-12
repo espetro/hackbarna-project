@@ -476,6 +476,7 @@ export default function RecommendationsPage() {
                       fill
                       className="object-cover"
                       sizes="100vw"
+                      unoptimized={true}
                       priority
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';

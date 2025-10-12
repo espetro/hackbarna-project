@@ -27,6 +27,7 @@ export default function CompactRecommendationCard({
               fill
               className="object-cover"
               sizes="64px"
+              unoptimized={true}
               onError={() => setImageError(true)}
             />
           ) : (

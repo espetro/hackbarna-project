@@ -86,6 +86,7 @@ export default function SwipeableCardStack({
                   fill
                   className="object-cover"
                   sizes="400px"
+                  unoptimized={true}
                   onError={() => setImageError(true)}
                 />
               ) : (

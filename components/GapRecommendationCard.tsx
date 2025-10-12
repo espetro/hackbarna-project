@@ -44,6 +44,7 @@ export default function GapRecommendationCard({ fit, onAdd }: GapRecommendationC
             fill
             className="object-cover"
             sizes="224px"
+            unoptimized={true}
             onError={() => setImageError(true)}
           />
         ) : (
