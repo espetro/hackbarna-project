@@ -1,26 +1,27 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Logo from '@/components/Logo';
-import { BackgroundLines } from '@/components/BackgroundLines';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Logo from "@/components/Logo";
+import { BackgroundLines } from "@/components/BackgroundLines";
+import { motion } from "framer-motion";
+import { LocaleSwitcher } from "lingo.dev/react/client";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     // Simple validation
     if (!email || !password) {
-      setError('Please enter both email and password');
+      setError("Please enter both email and password");
       setLoading(false);
       return;
     }
@@ -28,14 +29,14 @@ export default function LoginPage() {
     // Simulate login process
     try {
       // Add a small delay to simulate authentication
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // For demo purposes, accept any email/password combination
-      console.log('Logging in with:', email);
-      router.push('/favorites');
+      console.log("Logging in with:", email);
+      router.push("/favorites");
     } catch (err: any) {
-      console.error('Login error:', err);
-      setError('Login failed. Please try again.');
+      console.error("Login error:", err);
+      setError("Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -47,9 +48,10 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.5, ease: 'easeInOut' }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
         className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
       >
+        <LocaleSwitcher locales={["en", "es"]} />;
         <div className="max-w-md w-full space-y-8">
           {/* Logo */}
           <div className="flex justify-center">
@@ -72,7 +74,11 @@ export default function LoginPage() {
               {error && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4">
                   <p className="text-red-600 dark:text-red-400 text-sm flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -152,7 +158,7 @@ export default function LoginPage() {
                     Signing in...
                   </span>
                 ) : (
-                  'Sign in'
+                  "Sign in"
                 )}
               </button>
             </form>

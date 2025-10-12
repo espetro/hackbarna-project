@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+    "lingo.dev": "0.112.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18"
   }
