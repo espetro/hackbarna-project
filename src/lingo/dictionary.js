@@ -855,6 +855,18 @@ export default {
           },
       },
     },
+    "../components/LanguageSwitcher.tsx": {
+      entries: {
+        "2/0/init/body/2/argument/1": {
+          content: {
+            ca: "🔄",
+            en: "🔄",
+            es: "🔄",
+          },
+          hash: "bb0c9695672fa910f3b20e13b234a6d5",
+        },
+      },
+    },
     "../components/MapView.tsx": {
       entries: {
         "7/declaration/body/12/consequent/0/argument/1/3": {
@@ -882,6 +894,38 @@ export default {
           hash: "36c4b303b0a9d00c9a2b8fcb21aed663",
         },
         "7/declaration/body/12/consequent/0/argument/1/9": {
+          content: {
+            ca: "Obtén el teu token gratuït a <element:a>mapbox.com</element:a>",
+            en: "Get your free token at <element:a>mapbox.com</element:a>",
+            es: "Obtén tu token gratuito en <element:a>mapbox.com</element:a>",
+          },
+          hash: "3021252b15610bbecc356b2e5b45f27e",
+        },
+        "7/declaration/body/15/consequent/0/argument/1/3": {
+          content: {
+            ca: "Es requereix un token de Mapbox",
+            en: "Mapbox Token Required",
+            es: "Se requiere token de Mapbox",
+          },
+          hash: "a6e94b66711bb3e315e6219cfdc14522",
+        },
+        "7/declaration/body/15/consequent/0/argument/1/5": {
+          content: {
+            ca: "Per mostrar el mapa, afegeix el teu token d'accés de Mapbox al fitxer .env.local.",
+            en: "To display the map, please add your Mapbox access token to the .env.local file.",
+            es: "Para mostrar el mapa, añade tu token de acceso de Mapbox al archivo .env.local.",
+          },
+          hash: "2b62536d313217f1fece4ad71d59f874",
+        },
+        "7/declaration/body/15/consequent/0/argument/1/7": {
+          content: {
+            ca: "NEXT_PUBLIC_MAPBOX_KEY=el_teu_token_aquí",
+            en: "NEXT_PUBLIC_MAPBOX_KEY=your_token_here",
+            es: "NEXT_PUBLIC_MAPBOX_KEY=tu_token_aquí",
+          },
+          hash: "36c4b303b0a9d00c9a2b8fcb21aed663",
+        },
+        "7/declaration/body/15/consequent/0/argument/1/9": {
           content: {
             ca: "Obtén el teu token gratuït a <element:a>mapbox.com</element:a>",
             en: "Get your free token at <element:a>mapbox.com</element:a>",
@@ -1063,6 +1107,34 @@ export default {
             es: "<element:svg><element:path></element:path></element:svg> Desliza para explorar",
           },
           hash: "1fc2217dc030ea673842f137fd7fe729",
+        },
+      },
+    },
+    "../components/ThinkingScreen.tsx": {
+      entries: {
+        "5/declaration/body/3/argument/7/11/1/1": {
+          content: {
+            ca: "Pensant...",
+            en: "Thinking...",
+            es: "Pensando...",
+          },
+          hash: "aba8a515e0910029ef4326607fd12fe1",
+        },
+        "5/declaration/body/3/argument/7/15/3/1": {
+          content: {
+            ca: "Analitzant preferències...",
+            en: "Analyzing preferences...",
+            es: "Analizando preferencias...",
+          },
+          hash: "dbfcb9380e4cc5a5411894c116c9130f",
+        },
+        "5/declaration/body/3/argument/7/15/3/3": {
+          content: {
+            ca: "<function:Math.round/>%",
+            en: "<function:Math.round/>%",
+            es: "<function:Math.round/>%",
+          },
+          hash: "5ffe4a4526d680df3dc6d6e7880cbc9a",
         },
       },
     },

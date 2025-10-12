@@ -4,7 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { AppProvider } from "@/lib/context/AppContext";
 import { LingoProvider, loadDictionary } from "lingo.dev/react/rsc";
-import { LocaleSwitcher } from "lingo.dev/react/client";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,7 +22,7 @@ export default function RootLayout({
     <LingoProvider loadDictionary={(_) => loadDictionary(_)}>
       <html lang="en">
         <body className={inter.className}>
-          <LocaleSwitcher locales={["en", "es", "ca"]} />
+          <LanguageSwitcher />
           <AuthProvider>
             <AppProvider>{children}</AppProvider>
           </AuthProvider>

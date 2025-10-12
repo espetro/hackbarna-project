@@ -793,6 +793,18 @@
         }
       }
     },
+    "../components/LanguageSwitcher.tsx": {
+      "scopes": {
+        "2/0/init/body/2/argument/1": {
+          "type": "element",
+          "hash": "bb0c9695672fa910f3b20e13b234a6d5",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "🔄"
+        }
+      }
+    },
     "../components/MapView.tsx": {
       "scopes": {
         "7/declaration/body/12/consequent/0/argument/1/3": {
@@ -820,6 +832,38 @@
           "content": "NEXT_PUBLIC_MAPBOX_KEY=your_token_here"
         },
         "7/declaration/body/12/consequent/0/argument/1/9": {
+          "type": "element",
+          "hash": "3021252b15610bbecc356b2e5b45f27e",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Get your free token at <element:a>mapbox.com</element:a>"
+        },
+        "7/declaration/body/15/consequent/0/argument/1/3": {
+          "type": "element",
+          "hash": "a6e94b66711bb3e315e6219cfdc14522",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "Mapbox Token Required"
+        },
+        "7/declaration/body/15/consequent/0/argument/1/5": {
+          "type": "element",
+          "hash": "2b62536d313217f1fece4ad71d59f874",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "To display the map, please add your Mapbox access token to the .env.local file."
+        },
+        "7/declaration/body/15/consequent/0/argument/1/7": {
+          "type": "element",
+          "hash": "36c4b303b0a9d00c9a2b8fcb21aed663",
+          "context": "",
+          "skip": false,
+          "overrides": {},
+          "content": "NEXT_PUBLIC_MAPBOX_KEY=your_token_here"
+        },
+        "7/declaration/body/15/consequent/0/argument/1/9": {
           "type": "element",
           "hash": "3021252b15610bbecc356b2e5b45f27e",
           "context": "",
