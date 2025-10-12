@@ -99,8 +99,70 @@ export function parseWebhookResponse(webhookResponse: any, sessionId: string): R
 
     const recommendations: Recommendation[] = [];
 
+    // Handle single object with output.stations structure
+    if (webhookResponse?.output?.stations && Array.isArray(webhookResponse.output.stations)) {
+      const stations = webhookResponse.output.stations;
+      const location = webhookResponse.output.location || 'Unknown Location';
+
+      console.log(`📍 Processing ${stations.length} stations for ${location}`);
+
+      // Filter and process only attraction and restaurant stations
+      stations.forEach((station: any, stationIndex: number) => {
+        if (station.type === 'attraction' || station.type === 'restaurant') {
+          // Generate unique ID
+          const id = Date.now() + stationIndex;
+
+          // Extract coordinates from array [lat, lng]
+          let lat = 0;
+          let lng = 0;
+
+          if (Array.isArray(station.coordinates) && station.coordinates.length >= 2) {
+            lat = station.coordinates[0];
+            lng = station.coordinates[1];
+          }
+
+          // Validate required fields
+          if (!station.title || !station.description) {
+            console.warn('⚠️ Skipping station with missing title or description:', station);
+            return;
+          }
+
+          // Validate coordinates
+          if (lat === 0 || lng === 0 || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            console.warn('⚠️ Station has invalid coordinates:', {
+              title: station.title,
+              lat,
+              lng
+            });
+          }
+
+          // Calculate duration from start and end times
+          const durationHours = station.end - station.start;
+          const durationMinutes = Math.round(durationHours * 60);
+          const duration = durationMinutes < 60
+            ? `${durationMinutes} minutes`
+            : `${durationHours.toFixed(1)} hours`;
+
+          recommendations.push({
+            id,
+            title: station.title,
+            description: station.description,
+            image: station.image && station.image !== 'taxi' && station.image !== 'walking' && station.image.startsWith('http')
+              ? station.image
+              : '/assets/placeholder.jpg',
+            location: {
+              lat,
+              lng,
+            },
+            duration,
+            price: '$$', // Default price since not provided in new format
+            sessionId, // Include session ID for filtering
+          });
+        }
+      });
+    }
     // Handle array of responses with output.stations structure
-    if (Array.isArray(webhookResponse)) {
+    else if (Array.isArray(webhookResponse)) {
       webhookResponse.forEach((item, responseIndex) => {
         // Check if item has output.stations structure
         if (item?.output?.stations && Array.isArray(item.output.stations)) {
@@ -109,9 +171,9 @@ export function parseWebhookResponse(webhookResponse: any, sessionId: string): R
 
           console.log(`📍 Processing ${stations.length} stations for ${location}`);
 
-          // Filter and process only attraction stations
+          // Filter and process only attraction and restaurant stations
           stations.forEach((station: any, stationIndex: number) => {
-            if (station.type === 'attraction') {
+            if (station.type === 'attraction' || station.type === 'restaurant') {
               // Generate unique ID
               const id = Date.now() + (responseIndex * 1000) + stationIndex;
 
@@ -150,7 +212,7 @@ export function parseWebhookResponse(webhookResponse: any, sessionId: string): R
                 id,
                 title: station.title,
                 description: station.description,
-                image: station.image && station.image !== 'taxi' && station.image.startsWith('http')
+                image: station.image && station.image !== 'taxi' && station.image !== 'walking' && station.image.startsWith('http')
                   ? station.image
                   : '/assets/placeholder.jpg',
                 location: {

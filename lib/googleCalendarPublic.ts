@@ -2,15 +2,20 @@
 import { ItineraryEvent } from './types';
 
 /**
- * Extract calendar ID from a Google Calendar URL
+ * Extract calendar ID from a Google Calendar URL or return iCal URL
  */
-export function parseCalendarUrl(url: string): string | null {
+export function parseCalendarUrl(url: string): { type: 'ical' | 'api'; value: string } | null {
   try {
     const urlObj = new URL(url);
-    
+
     // Handle different URL formats
     if (urlObj.hostname !== 'calendar.google.com') {
       throw new Error('Invalid Google Calendar URL');
+    }
+
+    // Check if it's an iCal URL
+    if (urlObj.pathname.includes('/ical/') && urlObj.pathname.endsWith('.ics')) {
+      return { type: 'ical', value: url };
     }
 
     // Extract cid parameter (calendar ID)
@@ -18,23 +23,23 @@ export function parseCalendarUrl(url: string): string | null {
     if (cid) {
       // The cid is base64 encoded, decode it
       try {
-        return atob(cid);
+        return { type: 'api', value: atob(cid) };
       } catch (e) {
         // If decoding fails, use the cid as is
-        return cid;
+        return { type: 'api', value: cid };
       }
     }
 
     // Handle embed URLs like /calendar/embed?src=...
     const src = urlObj.searchParams.get('src');
     if (src) {
-      return decodeURIComponent(src);
+      return { type: 'api', value: decodeURIComponent(src) };
     }
 
     // Handle /calendar/u/0/r?cid= format
     const pathname = urlObj.pathname;
     if (pathname.includes('/calendar/') && cid) {
-      return cid;
+      return { type: 'api', value: cid };
     }
 
     throw new Error('Could not extract calendar ID from URL');
@@ -45,13 +50,163 @@ export function parseCalendarUrl(url: string): string | null {
 }
 
 /**
- * Fetch events from a public Google Calendar
+ * Parse iCal format and extract events
+ */
+async function parseICalEvents(icalText: string): Promise<ItineraryEvent[]> {
+  const events: ItineraryEvent[] = [];
+
+  // Split by event components
+  const eventBlocks = icalText.split('BEGIN:VEVENT');
+
+  for (let i = 1; i < eventBlocks.length; i++) {
+    const block = eventBlocks[i].split('END:VEVENT')[0];
+    const lines = block.split('\n').filter(line => line.trim());
+
+    const event: any = {};
+    let currentProperty = '';
+
+    for (const line of lines) {
+      // Handle multi-line properties (continuation lines start with space)
+      if (line.startsWith(' ') && currentProperty) {
+        event[currentProperty] += line.substring(1);
+        continue;
+      }
+
+      const colonIndex = line.indexOf(':');
+      if (colonIndex === -1) continue;
+
+      const fullKey = line.substring(0, colonIndex);
+      const value = line.substring(colonIndex + 1);
+
+      // Handle properties with parameters (e.g., DTSTART;TZID=...)
+      const [key] = fullKey.split(';');
+      currentProperty = key;
+      event[key] = value;
+    }
+
+    // Parse the event data
+    if (event.DTSTART && event.SUMMARY) {
+      const startTime = parseICalDate(event.DTSTART);
+      const endTime = event.DTEND ? parseICalDate(event.DTEND) : new Date(startTime.getTime() + 60 * 60 * 1000);
+
+      // Extract location coordinates if available
+      const location = extractLocationFromICalEvent(event);
+
+      events.push({
+        id: `ical-${event.UID || `event-${i}`}`,
+        title: event.SUMMARY.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, '\n'),
+        description: event.DESCRIPTION
+          ? event.DESCRIPTION.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, '\n')
+          : undefined,
+        location,
+        startTime,
+        endTime,
+        source: 'google_calendar' as const,
+      });
+    }
+  }
+
+  return events;
+}
+
+/**
+ * Parse iCal date format (YYYYMMDDTHHMMSSZ or YYYYMMDD)
+ */
+function parseICalDate(dateStr: string): Date {
+  // Remove any timezone identifiers
+  dateStr = dateStr.split(';')[0];
+
+  if (dateStr.length === 8) {
+    // All-day event: YYYYMMDD
+    const year = parseInt(dateStr.substring(0, 4));
+    const month = parseInt(dateStr.substring(4, 6)) - 1;
+    const day = parseInt(dateStr.substring(6, 8));
+    return new Date(year, month, day, 9, 0, 0);
+  } else if (dateStr.includes('T')) {
+    // DateTime: YYYYMMDDTHHMMSSZ
+    const isUTC = dateStr.endsWith('Z');
+    dateStr = dateStr.replace('Z', '');
+
+    const year = parseInt(dateStr.substring(0, 4));
+    const month = parseInt(dateStr.substring(4, 6)) - 1;
+    const day = parseInt(dateStr.substring(6, 8));
+    const hour = parseInt(dateStr.substring(9, 11));
+    const minute = parseInt(dateStr.substring(11, 13));
+    const second = parseInt(dateStr.substring(13, 15));
+
+    if (isUTC) {
+      return new Date(Date.UTC(year, month, day, hour, minute, second));
+    } else {
+      return new Date(year, month, day, hour, minute, second);
+    }
+  }
+
+  return new Date();
+}
+
+/**
+ * Extract location from iCal event
+ */
+function extractLocationFromICalEvent(event: any): { name: string; lat: number; lng: number } {
+  const defaultCoords = {
+    lat: 41.3851,
+    lng: 2.1734,
+  };
+
+  if (!event.LOCATION) {
+    return {
+      name: event.SUMMARY || 'Event Location',
+      ...defaultCoords,
+    };
+  }
+
+  return {
+    name: event.LOCATION.replace(/\\,/g, ',').replace(/\\;/g, ';'),
+    ...defaultCoords,
+  };
+}
+
+/**
+ * Fetch events from a public iCal URL
+ */
+async function fetchICalEvents(icalUrl: string): Promise<ItineraryEvent[]> {
+  try {
+    console.log('Fetching iCal from:', icalUrl);
+
+    const response = await fetch(icalUrl);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch iCal: ${response.status}`);
+    }
+
+    const icalText = await response.text();
+    const events = await parseICalEvents(icalText);
+
+    // Filter events to next 30 days
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const filteredEvents = events.filter(event =>
+      event.startTime >= now && event.startTime <= thirtyDaysFromNow
+    );
+
+    console.log(`Successfully imported ${filteredEvents.length} events from iCal`);
+    return filteredEvents;
+  } catch (error) {
+    console.error('Error fetching iCal events:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch events from a public Google Calendar using API
  */
 export async function fetchPublicCalendarEvents(calendarId: string): Promise<ItineraryEvent[]> {
   const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
   
+  // For public calendars, we can try without API key first
   if (!API_KEY) {
-    throw new Error('Google API key is not configured. Please add NEXT_PUBLIC_GOOGLE_API_KEY to your environment variables.');
+    console.warn('No Google API key configured. Attempting to fetch public calendar without authentication...');
   }
 
   // Calculate time range (next 30 days)
@@ -61,13 +216,17 @@ export async function fetchPublicCalendarEvents(calendarId: string): Promise<Iti
 
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
   const params = new URLSearchParams({
-    key: API_KEY,
     timeMin,
     timeMax,
     singleEvents: 'true',
     orderBy: 'startTime',
     maxResults: '50',
   });
+
+  // Add API key if available
+  if (API_KEY) {
+    params.append('key', API_KEY);
+  }
 
   try {
     console.log('Fetching calendar events from:', `${url}?${params}`);
@@ -79,7 +238,11 @@ export async function fetchPublicCalendarEvents(calendarId: string): Promise<Iti
       console.error('Calendar API Error:', response.status, errorData);
       
       if (response.status === 403) {
-        throw new Error('Calendar is private or API key is invalid. Please make sure the calendar is public.');
+        if (!API_KEY) {
+          throw new Error('Calendar requires authentication. Please add NEXT_PUBLIC_GOOGLE_API_KEY to your environment variables, or make sure the calendar is truly public.');
+        } else {
+          throw new Error('Calendar is private or API key is invalid. Please make sure the calendar is public.');
+        }
       } else if (response.status === 404) {
         throw new Error('Calendar not found. Please check the calendar URL.');
       } else {
@@ -137,9 +300,8 @@ export async function fetchPublicCalendarEvents(calendarId: string): Promise<Iti
  * Extract location information from a calendar event
  */
 function extractLocationFromEvent(event: any): { name: string; lat: number; lng: number } {
-  // Default location (Barcelona city center)
-  const defaultLocation = {
-    name: 'Barcelona, Spain',
+  // Default coordinates (Barcelona city center)
+  const defaultCoords = {
     lat: 41.3851,
     lng: 2.1734,
   };
@@ -147,7 +309,7 @@ function extractLocationFromEvent(event: any): { name: string; lat: number; lng:
   if (!event.location) {
     return {
       name: event.summary || 'Event Location',
-      ...defaultLocation,
+      ...defaultCoords,
     };
   }
 
@@ -155,7 +317,7 @@ function extractLocationFromEvent(event: any): { name: string; lat: number; lng:
   // In a real implementation, you might want to geocode the location string
   return {
     name: event.location,
-    ...defaultLocation,
+    ...defaultCoords,
   };
 }
 
@@ -164,17 +326,20 @@ function extractLocationFromEvent(event: any): { name: string; lat: number; lng:
  */
 export async function importFromCalendarUrl(calendarUrl: string): Promise<ItineraryEvent[]> {
   console.log('Importing calendar from URL:', calendarUrl);
-  
-  // Parse the calendar ID from the URL
-  const calendarId = parseCalendarUrl(calendarUrl);
-  if (!calendarId) {
+
+  // Parse the calendar URL
+  const parsed = parseCalendarUrl(calendarUrl);
+  if (!parsed) {
     throw new Error('Invalid calendar URL. Please check the URL format.');
   }
 
-  console.log('Extracted calendar ID:', calendarId);
-  
-  // Fetch events from the calendar
-  return await fetchPublicCalendarEvents(calendarId);
+  if (parsed.type === 'ical') {
+    console.log('Using iCal format (no API key required)');
+    return await fetchICalEvents(parsed.value);
+  } else {
+    console.log('Extracted calendar ID:', parsed.value);
+    return await fetchPublicCalendarEvents(parsed.value);
+  }
 }
 
 /**
@@ -183,13 +348,10 @@ export async function importFromCalendarUrl(calendarUrl: string): Promise<Itiner
 export async function testCalendarAccess(calendarId: string): Promise<boolean> {
   const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
   
-  if (!API_KEY) {
-    return false;
-  }
-
   try {
     const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}`;
-    const response = await fetch(`${url}?key=${API_KEY}`);
+    const testUrl = API_KEY ? `${url}?key=${API_KEY}` : url;
+    const response = await fetch(testUrl);
     return response.ok;
   } catch {
     return false;
