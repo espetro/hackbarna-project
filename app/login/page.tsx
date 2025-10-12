@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import { BackgroundLines } from "@/components/BackgroundLines";
 import { motion } from "framer-motion";
-import { LocaleSwitcher } from "lingo.dev/react/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -44,9 +43,6 @@ export default function LoginPage() {
 
   return (
     <BackgroundLines>
-      <div className="fixed top-6 right-6 z-50">
-        <LocaleSwitcher locales={["en", "es"]} />
-      </div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -1,4 +1,3 @@
-import lingoCompiler from "lingo.dev/compiler";
 import { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -8,10 +7,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default lingoCompiler.next({
-  sourceLocale: "en",
-  targetLocales: ["es", "fr", "de"],
-  models: {
-    "*:*": "google:gemini-2.0-flash",
-  },
-})(nextConfig);
+export default nextConfig;
