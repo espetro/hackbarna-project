@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import { BackgroundLines } from "@/components/BackgroundLines";
 import { motion } from "framer-motion";
-import { LocaleSwitcher } from "lingo.dev/react/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -51,7 +50,6 @@ export default function LoginPage() {
         transition={{ duration: 0.5, ease: "easeInOut" }}
         className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
       >
-        <LocaleSwitcher locales={["en", "es"]} />;
         <div className="max-w-md w-full space-y-8">
           {/* Logo */}
           <div className="flex justify-center">
