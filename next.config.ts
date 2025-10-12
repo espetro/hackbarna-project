@@ -8,10 +8,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default lingoCompiler.next({
-  sourceLocale: "en",
-  targetLocales: ["es", "fr", "de"],
-  models: {
-    "*:*": "google:gemini-2.0-flash", // Option 2: Google AI
-  },
-})(nextConfig);
+// Only apply Lingo.dev compiler if GOOGLE_API_KEY is available
+// This allows builds to succeed in environments without the API key
+const hasGoogleApiKey = process.env.GOOGLE_API_KEY && process.env.GOOGLE_API_KEY.trim() !== '';
+
+export default hasGoogleApiKey
+  ? lingoCompiler.next({
+      sourceLocale: "en",
+      targetLocales: ["es", "fr", "de"],
+      models: {
+        "*:*": "google:gemini-2.0-flash",
+      },
+    })(nextConfig)
+  : nextConfig;
