@@ -101,6 +101,10 @@ export default function InspirationPage() {
         setIsLoading(false); // Not loading anymore, now thinking
 
         try {
+          // Clear existing recommendations before webhook call
+          console.log('🗑️ Clearing existing recommendations');
+          setRecommendations([]);
+
           // Make webhook request
           console.log('📞 Calling webhook with session:', sessionId);
           console.log('📽️ Including favorite movies:', favoriteMovieNames);
@@ -198,7 +202,7 @@ export default function InspirationPage() {
         {/* Header */}
         <div className="text-center mb-16">
           <div className="flex justify-center mb-8">
-            <Logo width={180} height={60} />
+            <Logo width={240} height={80} />
           </div>
           <h1 className="text-4xl md:text-5xl font-light text-gray-900 dark:text-white mb-2">
             What do u fancy and when can you make it?

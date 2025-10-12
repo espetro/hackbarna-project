@@ -99,6 +99,17 @@ export function parseWebhookResponse(webhookResponse: any, sessionId: string): R
 
     const recommendations: Recommendation[] = [];
 
+    // Check if output is a string and parse it
+    if (webhookResponse?.output && typeof webhookResponse.output === 'string') {
+      try {
+        const parsedOutput = JSON.parse(webhookResponse.output);
+        webhookResponse = { output: parsedOutput };
+        console.log('✅ Parsed string output to JSON:', webhookResponse);
+      } catch (e) {
+        console.error('❌ Failed to parse output string:', e);
+      }
+    }
+
     // Handle single object with output.stations structure
     if (webhookResponse?.output?.stations && Array.isArray(webhookResponse.output.stations)) {
       const stations = webhookResponse.output.stations;
