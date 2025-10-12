@@ -25,33 +25,37 @@ export default function MapView({
   const mapRef = useRef<MapRef>(null);
   const hasCentered = useRef(false); // Track if we've already centered once
 
-  // Default to Paris coordinates
-  const [viewState, setViewState] = useState({
-    longitude: 2.3522,
-    latitude: 48.8566,
-    zoom: 12
-  });
-
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_KEY;
 
   // Helper function to validate coordinates
   const isValidCoordinate = (lat: number, lng: number): boolean => {
     return (
-      typeof lat === 'number' && 
-      typeof lng === 'number' && 
-      !isNaN(lat) && 
-      !isNaN(lng) && 
-      lat >= -90 && 
-      lat <= 90 && 
-      lng >= -180 && 
+      typeof lat === 'number' &&
+      typeof lng === 'number' &&
+      !isNaN(lat) &&
+      !isNaN(lng) &&
+      lat >= -90 &&
+      lat <= 90 &&
+      lng >= -180 &&
       lng <= 180
     );
   };
 
   // Filter out recommendations with invalid coordinates
-  const validRecommendations = recommendations.filter(rec => 
+  const validRecommendations = recommendations.filter(rec =>
     isValidCoordinate(rec.location.lat, rec.location.lng)
   );
+
+  // Initialize map at first recommendation's location, or default to Paris
+  const initialLocation = validRecommendations.length > 0
+    ? validRecommendations[0].location
+    : { lat: 48.8566, lng: 2.3522 }; // Paris as fallback
+
+  const [viewState, setViewState] = useState({
+    longitude: initialLocation.lng,
+    latitude: initialLocation.lat,
+    zoom: 11
+  });
 
   // Filter out itinerary events with invalid coordinates
   const validItineraryEvents = itineraryEvents.filter(event => 
@@ -161,12 +165,73 @@ export default function MapView({
     }
   }, [validItineraryEvents]);
 
+  // State to track animated path drawing progress
+  const [pathProgress, setPathProgress] = useState(0);
+
+  // Animate path drawing when itinerary events change
+  useEffect(() => {
+    if (validItineraryEvents.length > 1) {
+      // Reset progress
+      setPathProgress(0);
+
+      // Animate from 0 to 1 over 800ms
+      const startTime = Date.now();
+      const duration = 800;
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        setPathProgress(progress);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    } else {
+      setPathProgress(0);
+    }
+  }, [validItineraryEvents.length]); // Only re-animate when the number of events changes
+
   // Create GeoJSON for the itinerary route line (connecting valid itinerary events in order)
+  // Interpolate coordinates based on animation progress
+  const getInterpolatedCoordinates = () => {
+    if (validItineraryEvents.length < 2) return [];
+
+    const allCoordinates = validItineraryEvents.map(event => [event.location.lng, event.location.lat]);
+
+    // Calculate how many segments to show based on progress
+    const totalSegments = allCoordinates.length - 1;
+    const segmentsToShow = pathProgress * totalSegments;
+    const fullSegments = Math.floor(segmentsToShow);
+    const partialSegment = segmentsToShow - fullSegments;
+
+    // Start with full segments
+    const coordinates = allCoordinates.slice(0, fullSegments + 1);
+
+    // Add partial segment if there is one
+    if (partialSegment > 0 && fullSegments < totalSegments) {
+      const startCoord = allCoordinates[fullSegments];
+      const endCoord = allCoordinates[fullSegments + 1];
+
+      const interpolatedCoord = [
+        startCoord[0] + (endCoord[0] - startCoord[0]) * partialSegment,
+        startCoord[1] + (endCoord[1] - startCoord[1]) * partialSegment
+      ];
+
+      coordinates.push(interpolatedCoord);
+    }
+
+    return coordinates;
+  };
+
   const itineraryRouteGeoJSON = {
     type: 'Feature' as const,
     geometry: {
       type: 'LineString' as const,
-      coordinates: validItineraryEvents.map(event => [event.location.lng, event.location.lat])
+      coordinates: getInterpolatedCoordinates()
     },
     properties: {}
   };
