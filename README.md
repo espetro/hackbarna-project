@@ -2,6 +2,11 @@
 
 A Next.js web application for savvy business travelers to discover and book local, authentic experiences that fit their schedules.
 
+## Quickstart
+
+* [Check the project running on Vercel](https://hackbarna-project.vercel.app/)
+* If that doesn't work, [here's a short video demo](https://youtube.com/shorts/9kA_pUo8aA0?feature=share)
+
 ## Features
 
 - **Onboarding Flow**: Three-step onboarding with full-screen video backgrounds
